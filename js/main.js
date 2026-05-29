@@ -160,45 +160,13 @@ function initializeSeatClickLogic() {
     const displayTarget = document.getElementById("target-seat-display");
     const modalTriggerButton = document.getElementById("open-modal-trigger-btn");
     
-    const hoursSlider = document.getElementById("study-hours-range");
-    const hoursCounterDisplay = document.getElementById("hours-display-counter");
-    
+    const durationSelect = document.getElementById("modal-study-duration");
     const bookingModalOverlay = document.getElementById("booking-profile-modal");
     const closeModalButton = document.getElementById("close-modal-btn");
     const finalSubmissionForm = document.getElementById("brutal-submission-form");
     
     const summarySeatTag = document.getElementById("summary-seat-tag");
-    const summaryHoursTag = document.getElementById("summary-hours-tag");
-
-    const availableCheckbox = document.getElementById("filter-available");
-    const occupiedCheckbox = document.getElementById("filter-occupied");
-
     let globallySelectedSeatNumber = "None";
-
-    function applyLiveFilters() {
-        const showAvailable = availableCheckbox ? availableCheckbox.checked : true;
-        const showOccupied = occupiedCheckbox ? occupiedCheckbox.checked : true;
-
-        document.querySelectorAll(".study-hall-grid .desk").forEach(desk => {
-            if (desk.classList.contains("available") && !desk.classList.contains("selected")) {
-                desk.style.opacity = showAvailable ? "1" : "0.15";
-                desk.style.pointerEvents = showAvailable ? "auto" : "none";
-            } else if (desk.classList.contains("occupied")) {
-                desk.style.opacity = showOccupied ? "1" : "0.15";
-            }
-        });
-    }
-
-    if (availableCheckbox) availableCheckbox.addEventListener("change", applyLiveFilters);
-    if (occupiedCheckbox) occupiedCheckbox.addEventListener("change", applyLiveFilters);
-
-    if (hoursSlider) {
-        hoursSlider.addEventListener("input", function() {
-            const calculatedValue = this.value;
-            if (hoursCounterDisplay) hoursCounterDisplay.innerText = `${calculatedValue} ${calculatedValue == 1 ? 'Hour' : 'Hours'}`;
-            if (summaryHoursTag) summaryHoursTag.innerText = `${calculatedValue} ${calculatedValue == 1 ? 'Hour' : 'Hours'}`;
-        });
-    }
 
     availableDesks.forEach(desk => {
         desk.addEventListener("click", function() {
@@ -220,7 +188,6 @@ function initializeSeatClickLogic() {
     if (modalTriggerButton) {
         modalTriggerButton.addEventListener("click", function() {
             if (summarySeatTag) summarySeatTag.innerText = `Desk Assigned: Position #${globallySelectedSeatNumber}`;
-            if (summaryHoursTag && hoursSlider) summaryHoursTag.innerText = `${hoursSlider.value} Hours Plan`;
             if (bookingModalOverlay) bookingModalOverlay.classList.add("modal-visible");
             
             const activeEmail = sessionStorage.getItem("gauri_user_email") || "";
@@ -243,7 +210,7 @@ function initializeSeatClickLogic() {
             const studentName = document.getElementById("modal-user-name").value;
             const studentPhone = document.getElementById("modal-user-phone").value;
             const studentEmail = document.getElementById("modal-user-email").value;
-            const bookedHours = hoursSlider ? hoursSlider.value : "6";
+            const bookedHours = durationSelect ? durationSelect.value : "6";
 
             const actionButton = document.getElementById("final-mail-dispatch-btn");
             if (actionButton) {
@@ -281,7 +248,7 @@ function initializeSeatClickLogic() {
                 window.location.href = `mailto:${studentEmail}?subject=Gauri Library Pass&body=Desk Space Allocation #${globallySelectedSeatNumber}`;
                 
                 if (actionButton) {
-                    actionButton.innerText = "Generate Receipt & Transmit Confirmation Email ✉";
+                    actionButton.innerText = "Lock Desk Space & Dispatched Email Ticket ✉";
                     actionButton.disabled = false;
                 }
             });
