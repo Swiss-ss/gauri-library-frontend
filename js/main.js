@@ -127,31 +127,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
         async function loadSeatLayoutGrid() {
             try {
-                gridContainer.innerHTML = "<p style='grid-column: span 13; text-align:center; font-weight:bold;'>Syncing layout geometry... ⏳</p>";
+                // Professional loader that warns recruiters about the free-tier spin up!
+                gridContainer.innerHTML = `
+                    <div style='grid-column: span 13; text-align:center; padding: 40px 0;'>
+                        <p style='font-weight:bold; margin-bottom: 10px;'>🍃 Connecting to Cloud Infrastructure...</p>
+                        <p style='font-size: 13px; color: #666; max-width: 400px; margin: 0 auto;'>
+                            Note: The backend is hosted on a free cloud container. If it has been inactive, it takes roughly 45-60 seconds for the server to perform a "cold start" and sync databases. Thank you for your patience! ⏳
+                        </p>
+                    </div>
+                `;
+                
                 const res = await fetch(`${API_BASE_URL}/api/seats`);
                 const seatLayoutArray = await res.json();
                 gridContainer.innerHTML = "";
 
                 let structuralIndex = 1;
-                // Generate 72 theater layout slots (6 columns - aisle - 6 columns)
                 for (let row = 0; row < 6; row++) {
-                    // Left Wing Block
                     for (let col = 0; col < 6; col++) {
                         appendDeskNode(structuralIndex, seatLayoutArray[structuralIndex - 1]);
                         structuralIndex++;
                     }
-                    // Theater Central Aisle Way Spacer
                     const aisle = document.createElement("div");
                     aisle.className = "aisle-spacer";
                     gridContainer.appendChild(aisle);
-                    // Right Wing Block
                     for (let col = 0; col < 6; col++) {
                         appendDeskNode(structuralIndex, seatLayoutArray[structuralIndex - 1]);
                         structuralIndex++;
                     }
                 }
             } catch (err) {
-                gridContainer.innerHTML = "<p style='grid-column: span 13; text-align:center; color:red; font-weight:bold;'>❌ Failed to load seat maps. Verify backend server connectivity.</p>";
+                // Instead of a generic failure, offer a quick manual retry button
+                gridContainer.innerHTML = `
+                    <div style='grid-column: span 13; text-align:center; padding: 30px; color:red; font-weight:bold;'>
+                        <p>❌ Connection timeout during server boot sequence.</p>
+                        <button class="btn-black-pill" onclick="location.reload()" style="margin-top: 15px; padding: 8px 20px;">Wake up & Retry Connection 🔄</button>
+                    </div>
+                `;
             }
         }
 

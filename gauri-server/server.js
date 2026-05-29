@@ -222,10 +222,12 @@ app.post('/api/allocate-seat', async (req, res) => {
             text: `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${targetSeatNum}\n• Duration Limit: ${duration} Hours Plan`
         };
 
+// Change this block in your server.js to catch the real error:
         gmailTransporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.error("❌ Gmail Transporter Error:", error);
-                return res.status(200).json({ success: true, note: "Mail system offline, space locked in cluster." });
+                // Temporarily return the actual error message to the frontend so we can read it!
+                return res.status(500).json({ success: false, error: "Mail system error: " + error.message });
             }
             res.status(200).json({ success: true });
         });
