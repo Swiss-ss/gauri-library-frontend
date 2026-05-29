@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Internal local data engine
+// Internal local file storage database engine
 const localStorage = new LocalStorage('./scratch');
 
 const gmailTransporter = nodemailer.createTransport({
@@ -24,17 +24,17 @@ function getDatabase(key) {
     return data ? JSON.parse(data) : {};
 }
 
-// 5:00 AM Auto-Reset
+// Automated 5:00 AM Clear-Out Routine
 setInterval(() => {
     const now = new Date();
     if (now.getHours() === 5 && now.getMinutes() === 0) {
         localStorage.setItem('seat_ledger', JSON.stringify({}));
-        console.log("🌅 All seats successfully cleared for the day.");
+        console.log("🌅 Morning cleaning routine complete: All 72 seats reset to empty.");
     }
 }, 60000);
 
 // ==========================================================================
-// THE MISSING SEAT MATRIX ROUTE
+// THE CORE MAP MATRIX ENDPOINT (What the frontend is looking for)
 // ==========================================================================
 app.get('/api/seats', (req, res) => {
     const seatLedger = getDatabase('seat_ledger');
@@ -48,29 +48,31 @@ app.get('/api/seats', (req, res) => {
     res.status(200).json(dynamicArrayLayout);
 });
 
-// AUTH SYSTEM
+// SIGN UP ROUTE
 app.post('/api/auth/signup', (req, res) => {
     const { name, email, password } = req.body;
     const usersDB = getDatabase('users_list');
 
     if (usersDB[email.toLowerCase()]) {
-        return res.status(400).json({ success: false, error: "Account exists." });
+        return res.status(400).json({ success: false, error: "Account with this email already exists." });
     }
 
     const assignRole = (email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'student';
+
     usersDB[email.toLowerCase()] = { name, password, role: assignRole };
     localStorage.setItem('users_list', JSON.stringify(usersDB));
 
     res.status(200).json({ success: true, role: assignRole, name });
 });
 
+// LOGIN ROUTE
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
     const usersDB = getDatabase('users_list');
     const user = usersDB[email.toLowerCase()];
 
     if (!user || user.password !== password) {
-        return res.status(401).json({ success: false, error: "Invalid credentials." });
+        return res.status(401).json({ success: false, error: "Invalid username or password credentials." });
     }
 
     res.status(200).json({ 
@@ -81,13 +83,13 @@ app.post('/api/auth/login', (req, res) => {
     });
 });
 
-// SEAT ALLOCATION
+// SEAT ALLOCATION ROUTE
 app.post('/api/allocate-seat', (req, res) => {
     const { studentName, studentPhone, studentEmail, seatNumber, duration } = req.body;
     const seatLedger = getDatabase('seat_ledger');
 
     if (seatLedger[seatNumber]) {
-        return res.status(400).json({ success: false, error: "Occupied!" });
+        return res.status(400).json({ success: false, error: "This desk has already been occupied!" });
     }
 
     seatLedger[seatNumber] = {
@@ -102,8 +104,8 @@ app.post('/api/allocate-seat', (req, res) => {
     const mailOptions = {
         from: process.env.GMAIL_USER,
         to: studentEmail,
-        subject: `[CONFIRMATION] Gauri Library Desk #${seatNumber}`,
-        text: `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${seatNumber}\n• Duration Limit: ${duration} Hours Plan`
+        subject: `[CONFIRMATION TICKET] Gauri Library Desk #${seatNumber}`,
+        text: `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${seatNumber}\n• Duration Limit: ${duration} Hours Plan Session`
     };
 
     gmailTransporter.sendMail(mailOptions, (error, info) => {
@@ -112,4 +114,4 @@ app.post('/api/allocate-seat', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running smoothly on Port ${PORT}`));
+app.listen(PORT, () => console.log(`Gauri Server running smoothly on Port ${PORT}`));
