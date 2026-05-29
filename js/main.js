@@ -17,7 +17,6 @@ if (loginForm) {
         const email = document.getElementById("login-email").value;
         const password = document.getElementById("login-password").value;
 
-        // FIXED: Added '/api/auth/login' route endpoint string
         fetch('https://gauri-library-backend.onrender.com/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -36,7 +35,7 @@ if (loginForm) {
                     alert('Access Granted. Welcome back, Admin!');
                     window.location.href = "admin.html"; // Redirect Father to the ledger dashboard view
                 } else {
-                    alert('Login successful! Redirecting to seat layout layout grid...');
+                    alert('Login successful! Redirecting to seat layout grid...');
                     window.location.href = "spaces.html"; // Redirect Student to layout mapping grid
                 }
             } else { 
@@ -57,7 +56,6 @@ if (signupForm) {
         const email = document.getElementById("signup-email").value;
         const password = document.getElementById("signup-password").value;
 
-        // FIXED: Added '/api/auth/signup' route endpoint string
         fetch('https://gauri-library-backend.onrender.com/api/auth/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -86,42 +84,52 @@ if (signupForm) {
 document.addEventListener("DOMContentLoaded", function () {
     console.log("System initialization...");
 
-    // 1. RUN SEAT MATRIX DRAW ENGINE IMMEDIATELY
+    // FETCH REAL LIVE SEAT MATRIX STATUS FROM SERVER
     try {
         const gridContainer = document.getElementById("dynamic-72-seat-grid");
         if (gridContainer) {
-            gridContainer.innerHTML = ""; // Clear any leftover hardcoded HTML artifacts
+            gridContainer.innerHTML = "<div style='grid-column: span 13; text-align: center; color: #777;'>Syncing live library desk grid matrix... ⏳</div>";
             
-            let seatCounterLeft = 1;
-            let seatCounterRight = 37;
+            fetch('https://gauri-library-backend.onrender.com/api/seats')
+                .then(res => res.json())
+                .then(seatsArray => {
+                    gridContainer.innerHTML = ""; // Clear loader string content
+                    
+                    let seatCounterLeft = 1;
+                    let seatCounterRight = 37;
 
-            // Loop through 6 rows
-            for (let row = 0; row < 6; row++) {
-                // Build Left Side Column Section (6 Desks wide)
-                for (let i = 0; i < 6; i++) {
-                    createDeskElement(seatCounterLeft, gridContainer);
-                    seatCounterLeft++;
-                }
+                    // Loop through 6 rows structurally
+                    for (let row = 0; row < 6; row++) {
+                        // Build Left Side Column Section (6 Desks wide)
+                        for (let i = 0; i < 6; i++) {
+                            createRealDeskElement(seatCounterLeft, seatsArray[seatCounterLeft - 1], gridContainer);
+                            seatCounterLeft++;
+                        }
 
-                // Build Center Walking Aisle Spacer Element Block per row
-                const aisle = document.createElement("div");
-                aisle.className = "aisle-spacer";
-                gridContainer.appendChild(aisle);
+                        // Build Center Walking Aisle Spacer Element Block per row
+                        const aisle = document.createElement("div");
+                        aisle.className = "aisle-spacer";
+                        gridContainer.appendChild(aisle);
 
-                // Build Right Side Column Section (6 Desks wide)
-                for (let j = 0; j < 6; j++) {
-                    createDeskElement(seatCounterRight, gridContainer);
-                    seatCounterRight++;
-                }
-            }
-            console.log("72 Seat nodes generated perfectly.");
-            initializeSeatClickLogic();
+                        // Build Right Side Column Section (6 Desks wide)
+                        for (let j = 0; j < 6; j++) {
+                            createRealDeskElement(seatCounterRight, seatsArray[seatCounterRight - 1], gridContainer);
+                            seatCounterRight++;
+                        }
+                    }
+                    console.log("72 Live database seat nodes synchronized perfectly.");
+                    initializeSeatClickLogic();
+                })
+                .catch(err => {
+                    console.error("Database status fetch failed:", err);
+                    gridContainer.innerHTML = "<div style='grid-column: span 13; text-align: center; color: red;'>❌ Unable to load seat maps. Verify server connectivity.</div>";
+                });
         }
     } catch (error) {
         console.error("Grid builder ran into an issue: ", error);
     }
 
-    // 2. RUN NAVIGATION & AUTH UTILITIES SAFELY (FIXED TO MATCH GAURI KEYS)
+    // RUN NAVIGATION & AUTH UTILITIES SAFELY
     try {
         if (isLoggedIn) {
             const authContainer = document.querySelector(".auth-buttons");
@@ -138,16 +146,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// Structural creation engine helper logic string
-function createDeskElement(seatNumber, container) {
+// Structural helper parsing database state values cleanly
+function createRealDeskElement(seatNumber, occupancyData, container) {
     const desk = document.createElement("div");
-    // 35% probability index allocation for real-time occupant metrics simulation
-    const isOccupiedRandom = Math.random() < 0.35;
     
-    if (isOccupiedRandom) {
+    if (occupancyData !== null) {
+        // Seat is taken in server records
         desk.className = "desk occupied";
         desk.innerText = seatNumber;
     } else {
+        // Seat is completely open and free
         desk.className = "desk available";
         desk.innerText = seatNumber;
         desk.setAttribute("data-seat", seatNumber);
@@ -179,7 +187,6 @@ function initializeSeatClickLogic() {
 
     let globallySelectedSeatNumber = "None";
 
-    // Dynamic filtering execution block
     function applyLiveFilters() {
         const showAvailable = availableCheckbox ? availableCheckbox.checked : true;
         const showOccupied = occupiedCheckbox ? occupiedCheckbox.checked : true;
@@ -197,7 +204,6 @@ function initializeSeatClickLogic() {
     if (availableCheckbox) availableCheckbox.addEventListener("change", applyLiveFilters);
     if (occupiedCheckbox) occupiedCheckbox.addEventListener("change", applyLiveFilters);
 
-    // Live slider readout updates
     if (hoursSlider) {
         hoursSlider.addEventListener("input", function() {
             const calculatedValue = this.value;
@@ -206,7 +212,6 @@ function initializeSeatClickLogic() {
         });
     }
 
-    // Click selection logic handler updates
     availableDesks.forEach(desk => {
         desk.addEventListener("click", function() {
             if (this.classList.contains("selected")) {
@@ -224,7 +229,6 @@ function initializeSeatClickLogic() {
         });
     });
 
-    // Modal Trigger Toggles
     if (modalTriggerButton) {
         modalTriggerButton.addEventListener("click", function() {
             if (summarySeatTag) summarySeatTag.innerText = `Desk Assigned: Position #${globallySelectedSeatNumber}`;
@@ -245,32 +249,24 @@ function initializeSeatClickLogic() {
         });
     }
 
-    // ----------------------------------------------------------------------
-    // D. SECURE NATIVE DIRECT GMAIL TRANSACTION PIPELINE INTERCEPTOR
-    // ----------------------------------------------------------------------
     if (finalSubmissionForm) {
         finalSubmissionForm.addEventListener("submit", function(event) {
-            event.preventDefault(); // Stop standard redirect behavior
+            event.preventDefault();
 
-            // Extract values
             const studentName = document.getElementById("modal-user-name").value;
             const studentPhone = document.getElementById("modal-user-phone").value;
             const studentEmail = document.getElementById("modal-user-email").value;
             const bookedHours = hoursSlider ? hoursSlider.value : "6";
 
-            // UI feedback loader status states adjustments
             const actionButton = document.getElementById("final-mail-dispatch-btn");
             if (actionButton) {
-                actionButton.innerText = "Connecting directly to Gmail Hub... ⏳";
+                actionButton.innerText = "Allocating Space & Sending Email Ticket... ⏳";
                 actionButton.disabled = true;
             }
 
-            // FIXED: Added '/api/allocate-seat' endpoint routing path string
             fetch('https://gauri-library-backend.onrender.com/api/allocate-seat', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     studentName: studentName,
                     studentPhone: studentPhone,
@@ -279,22 +275,24 @@ function initializeSeatClickLogic() {
                     duration: bookedHours
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || "Taken") });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     alert(`🎉 Allocation Success!\n\nDesk Space #${globallySelectedSeatNumber} is officially locked.\nA confirmation pass has been dispatched directly from our Gmail system straight to ${studentEmail}.`);
                     if (bookingModalOverlay) bookingModalOverlay.classList.remove("modal-visible");
-                    window.location.href = "index.html";
-                } else {
-                    throw new Error(data.error || "Server processing transaction error drop.");
+                    window.location.href = "spaces.html"; // Reload to capture newly updated layout maps
                 }
             })
             .catch(error => {
                 console.error("Connection failure details:", error);
-                alert("Booking finalized! Launching manual validation mail client option fallback link...");
+                alert("Booking error: " + error.message + ". Launching backup mail shortcut link option...");
                 window.location.href = `mailto:${studentEmail}?subject=Gauri Library Pass&body=Desk Space Allocation #${globallySelectedSeatNumber}`;
                 
-                // Reset button loop state
                 if (actionButton) {
                     actionButton.innerText = "Generate Receipt & Transmit Confirmation Email ✉";
                     actionButton.disabled = false;
@@ -304,7 +302,6 @@ function initializeSeatClickLogic() {
     }
 }
 
-// Global authentication handlers escape sequences
 function logoutUser() {
     sessionStorage.clear();
     window.location.href = "index.html";
