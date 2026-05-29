@@ -30,13 +30,12 @@ if (loginForm) {
                 sessionStorage.setItem("gauri_user_name", data.name || "Aspirant");
                 sessionStorage.setItem("gauri_user_email", data.email);
 
-                // ROLE-BASED REDIRECTION DASHBOARD LOOP
                 if (data.role === 'admin') {
                     alert('Access Granted. Welcome back, Admin!');
-                    window.location.href = "admin.html"; // Redirect Father to the ledger dashboard view
+                    window.location.href = "admin.html";
                 } else {
                     alert('Login successful! Redirecting to seat layout grid...');
-                    window.location.href = "spaces.html"; // Redirect Student to layout mapping grid
+                    window.location.href = "spaces.html";
                 }
             } else { 
                 alert(data.error || "Invalid username or password credentials."); 
@@ -65,7 +64,7 @@ if (signupForm) {
         .then(data => {
             if (data.success) {
                 alert("✨ Account Registered Successfully! Please Log In with your credentials.");
-                window.location.reload(); // Reloads to let them sign in cleanly
+                window.location.reload();
             } else { 
                 alert(data.error || "Signup rejected. Account might already exist."); 
             }
@@ -84,7 +83,6 @@ if (signupForm) {
 document.addEventListener("DOMContentLoaded", function () {
     console.log("System initialization...");
 
-    // 1. FETCH REAL LIVE SEAT MATRIX STATUS FROM SERVER
     try {
         const gridContainer = document.getElementById("dynamic-72-seat-grid");
         if (gridContainer) {
@@ -93,25 +91,24 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch('https://gauri-library-backend.onrender.com/api/seats')
                 .then(res => res.json())
                 .then(seatsArray => {
-                    gridContainer.innerHTML = ""; // Clear loader string content
+                    gridContainer.innerHTML = ""; 
                     
                     let seatCounterLeft = 1;
                     let seatCounterRight = 37;
 
-                    // Loop through 6 rows structurally
                     for (let row = 0; row < 6; row++) {
-                        // Build Left Side Column Section (6 Desks wide)
+                        // Left Column
                         for (let i = 0; i < 6; i++) {
                             createRealDeskElement(seatCounterLeft, seatsArray[seatCounterLeft - 1], gridContainer);
                             seatCounterLeft++;
                         }
 
-                        // Build Center Walking Aisle Spacer Element Block per row
+                        // Walking Aisle
                         const aisle = document.createElement("div");
                         aisle.className = "aisle-spacer";
                         gridContainer.appendChild(aisle);
 
-                        // Build Right Side Column Section (6 Desks wide)
+                        // Right Column
                         for (let j = 0; j < 6; j++) {
                             createRealDeskElement(seatCounterRight, seatsArray[seatCounterRight - 1], gridContainer);
                             seatCounterRight++;
@@ -129,7 +126,6 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Grid builder ran into an issue: ", error);
     }
 
-    // 2. RUN NAVIGATION & AUTH UTILITIES SAFELY
     try {
         if (isLoggedIn) {
             const authContainer = document.querySelector(".auth-buttons");
@@ -142,21 +138,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     } catch (error) {
-        console.log("Auth display bypassed on this interface template layer.");
+        console.log("Auth display bypassed.");
     }
 });
 
-// Structural helper parsing database state values cleanly
-// Structural helper parsing database state values cleanly
 function createRealDeskElement(seatNumber, occupancyData, container) {
     const desk = document.createElement("div");
-    
     if (occupancyData !== null) {
-        // Seat is taken in server records
         desk.className = "desk occupied";
         desk.innerText = seatNumber;
     } else {
-        // Seat is completely open and free
         desk.className = "desk available";
         desk.innerText = seatNumber;
         desk.setAttribute("data-seat", seatNumber);
@@ -164,22 +155,18 @@ function createRealDeskElement(seatNumber, occupancyData, container) {
     container.appendChild(desk);
 }
 
-// Interactive filter states listener channels
 function initializeSeatClickLogic() {
     const availableDesks = document.querySelectorAll(".desk.available");
     const displayTarget = document.getElementById("target-seat-display");
     const modalTriggerButton = document.getElementById("open-modal-trigger-btn");
     
-    // Slider Controllers
     const hoursSlider = document.getElementById("study-hours-range");
     const hoursCounterDisplay = document.getElementById("hours-display-counter");
     
-    // Modal Overlay Elements
     const bookingModalOverlay = document.getElementById("booking-profile-modal");
     const closeModalButton = document.getElementById("close-modal-btn");
     const finalSubmissionForm = document.getElementById("brutal-submission-form");
     
-    // Modal internal text tag summary boxes
     const summarySeatTag = document.getElementById("summary-seat-tag");
     const summaryHoursTag = document.getElementById("summary-hours-tag");
 
@@ -236,7 +223,6 @@ function initializeSeatClickLogic() {
             if (summaryHoursTag && hoursSlider) summaryHoursTag.innerText = `${hoursSlider.value} Hours Plan`;
             if (bookingModalOverlay) bookingModalOverlay.classList.add("modal-visible");
             
-            // Auto-fill student email/name fields if logged in
             const activeEmail = sessionStorage.getItem("gauri_user_email") || "";
             const activeName = sessionStorage.getItem("gauri_user_name") || "";
             if(document.getElementById("modal-user-email")) document.getElementById("modal-user-email").value = activeEmail;
@@ -284,14 +270,14 @@ function initializeSeatClickLogic() {
             })
             .then(data => {
                 if (data.success) {
-                    alert(`🎉 Allocation Success!\n\nDesk Space #${globallySelectedSeatNumber} is officially locked.\nA confirmation pass has been dispatched directly from our Gmail system straight to ${studentEmail}.`);
+                    alert(`🎉 Allocation Success!\n\nDesk Space #${globallySelectedSeatNumber} is officially locked.\nA confirmation pass has been dispatched straight to ${studentEmail}.`);
                     if (bookingModalOverlay) bookingModalOverlay.classList.remove("modal-visible");
-                    window.location.href = "spaces.html"; // Reload to capture newly updated layout maps
+                    window.location.href = "spaces.html"; 
                 }
             })
             .catch(error => {
                 console.error("Connection failure details:", error);
-                alert("Booking error: " + error.message + ". Launching backup mail shortcut link option...");
+                alert("Booking error: " + error.message + ". Launching backup mail shortcut...");
                 window.location.href = `mailto:${studentEmail}?subject=Gauri Library Pass&body=Desk Space Allocation #${globallySelectedSeatNumber}`;
                 
                 if (actionButton) {
