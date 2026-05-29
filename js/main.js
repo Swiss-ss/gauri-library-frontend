@@ -28,11 +28,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Security Gate: Protect spaces.html from unauthenticated visitors
-    if (window.location.pathname.includes("spaces.html") && !activeUser) {
-        alert("🔒 Security Access Pass required. Please sign in first.");
-        window.location.href = "login.html";
-        return;
-    }
+    //if (window.location.pathname.includes("spaces.html") && !activeUser) {
+      //  alert("🔒 Security Access Pass required. Please sign in first.");
+        //window.location.href = "login.html";
+        //return;
+    //}
 
     // -------------------------------------------------------------------------
     // 2. AUTHENTICATION GATEWAY PIPELINES (login.html actions)
@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // 3. THEATER-STYLE SEATING MATRIX ENGINE (spaces.html actions)
     // -------------------------------------------------------------------------
     const gridContainer = document.getElementById("dynamic-72-seat-grid");
-    if (gridContainer && activeUser) {
+    if (gridContainer) {
         let currentlySelectedSeat = null;
 
         const targetDisplay = document.getElementById("target-seat-display");
@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const payload = {
                 studentName: document.getElementById("modal-user-name").value,
                 studentPhone: document.getElementById("modal-user-phone").value,
-                studentEmail: activeUser.email,
+                studentEmail: activeUser ? activeUser.email : "teststudent@gmail.com",
                 seatNumber: currentlySelectedSeat,
                 duration: rangeSlider.value
             };
