@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauri Library | Admin Ledger</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body style="background-color: var(--bg-canvas);">
+
+    <nav class="navbar-brutal">
+        <div class="logo-box">
+            <img src="assets/logo.png" alt="Gauri Library Logo" class="logo-image">
+            <div class="logo-text">Gauri Library Panel</div>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Main Site</a>
+        </div>
+    </nav>
+
+    <main class="subpage-container" style="padding: 40px; max-width: 1200px; margin: 0 auto;">
+        <div class="subpage-header-block" style="margin-bottom: 30px;">
+            <div class="badge-discount" style="background: #f26f3c; color: white;">Management View</div>
+            <h1>Live Workspace Occupancy Ledger</h1>
+            <p>Review real-time details tracking exactly which student is seated at which desk position.</p>
+        </div>
+
+        <div class="brutal-card" style="background-color: #ffffff; padding: 30px; border: var(--border-thick); box-shadow: var(--shadow-flat); border-radius: 24px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: var(--border-thick); background-color: var(--bg-card); font-size: 14px;">
+                        <th style="padding: 15px; font-weight: 800;">DESK NO.</th>
+                        <th style="padding: 15px; font-weight: 800;">STUDENT NAME</th>
+                        <th style="padding: 15px; font-weight: 800;">CONTACT NUMBER</th>
+                        <th style="padding: 15px; font-weight: 800;">EMAIL ADDRESS</th>
+                        <th style="padding: 15px; font-weight: 800;">DURATION TIME</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-live-rows-tbody">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // Separate custom script just for your father's dashboard view
+        document.addEventListener("DOMContentLoaded", function () {
+            const tableBody = document.getElementById("admin-live-rows-tbody");
+            
+            // Connect to your node background server to pull live allocation stats
+            fetch('http://localhost:3000/api/admin/dashboard-ledger')
+                .then(res => res.json())
+                .then(data => {
+                    const masterList = data.ledger || {};
+                    tableBody.innerHTML = "";
+
+                    const keys = Object.keys(masterList);
+                    if (keys.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center; font-weight:bold; color:#7788aa;">No active desk seats allocations booked at the moment.</td></tr>`;
+                        return;
+                    }
+
+                    // Sort numerical list order map items properties into rows
+                    keys.sort((a,b) => a - b).forEach(seatNum => {
+                        const info = masterList[seatNum];
+                        const row = document.createElement("tr");
+                        row.style.borderBottom = "1px solid #eeeeee";
+                        
+                        row.innerHTML = `
+                            <td style="padding:15px; font-weight:900; color:#f26f3c;">DESK #${seatNum}</td>
+                            <td style="padding:15px; font-weight:700;">${info.name}</td>
+                            <td style="padding:15px; font-weight:700; color:#556688;">${info.phone}</td>
+                            <td style="padding:15px; font-weight:600;">${info.email}</td>
+                            <td style="padding:15px;"><span class="badge-discount" style="margin:0; background-color:#fff3cd;">${info.duration} Hours</span></td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(err => {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center; font-weight:bold; color:red;">Local server server.js is offline. Please start it in your terminal.</td></tr>`;
+                });
+        });
+    </script>
+</body>
+</html>

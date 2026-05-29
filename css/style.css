@@ -1,0 +1,951 @@
+/* ==========================================================================
+   GAURI LIBRARY CUSTOM NEO-BRUTALIST PRODUCTION ENGINE
+   ========================================================================== */
+
+:root {
+    --bg-canvas: #f6f3ee;        /* Soft warm canvas background */
+    --bg-card: #ebe3d8;          /* Container block background fill */
+    --bg-white: #ffffff;
+    --bg-accent-yellow: #f5f79d; /* High-contrast pastel gold pop */
+    --bg-accent-orange: #f26f3c; /* Secondary operational banner orange */
+    
+    /* BRAND NAVY COLOR INTEGRATION FROM YOUR LOGO */
+    --text-dark: #122244;        
+    --border-thick: 3px solid #122244;
+    --shadow-flat: 6px 6px 0px #122244;
+}
+
+/* Reset and Global Settings */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-dark);
+}
+
+body {
+    background-color: var(--bg-canvas);
+    padding: 30px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Branded Navigation Component --- */
+.navbar-brutal {
+    background-color: var(--bg-card);
+    border: var(--border-thick);
+    border-radius: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 35px;
+    margin-bottom: 40px;
+    width: 100%;
+}
+
+.navbar-brutal .logo-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.navbar-brutal .logo-image {
+    height: 55px; /* Precision constraint so it sits perfectly balanced inside the pill bar */
+    width: auto;
+    object-fit: contain;
+}
+
+.navbar-brutal .logo-text {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+}
+
+.navbar-brutal .nav-links a {
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 18px;
+    position: relative;
+    transition: 0.2s;
+}
+
+.navbar-brutal .nav-links a:hover, 
+.navbar-brutal .nav-links a.active {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-text {
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.btn-accent-pill {
+    background-color: var(--bg-accent-yellow);
+    border: var(--border-thick);
+    padding: 10px 24px;
+    border-radius: 25px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0px var(--text-dark);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-accent-pill:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0px 0px 0px var(--text-dark);
+}
+
+/* --- Main Layout Grid Configurations --- */
+.main-dashboard-grid {
+    display: grid;
+    grid-template-columns: 300px 300px 1fr;
+    gap: 25px;
+    align-items: start;
+    flex: 1;
+}
+
+/* Fine Tuning Adjustment for Homepage Grid Structure */
+.hero-adjustment {
+    grid-template-columns: 1fr 1.2fr !important; /* Balanced side-by-side view layout */
+    gap: 40px !important;
+    align-items: stretch;
+    margin-bottom: 40px;
+}
+
+.hero-left-intro {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Base Structural Card */
+.brutal-card {
+    background-color: var(--bg-card);
+    border: var(--border-thick);
+    border-radius: 24px;
+    padding: 25px;
+    margin-bottom: 25px;
+    position: relative;
+}
+
+.hero-aesthetic-image-card {
+    /* Changed from .jpg to .jpeg */
+    background-image: url('../assets/library-view.jpeg') !important; 
+    
+    background-size: cover !important; 
+    background-position: center !important; 
+    border: var(--border-thick) !important;
+    box-shadow: var(--shadow-flat) !important;
+    min-height: 400px !important;
+    padding: 0 !important;
+    position: relative !important;
+    border-radius: 28px !important;
+    display: block !important;
+}
+
+/* Neo-Brutalist label badge inside image container overlay */
+.image-inner-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+}
+
+.image-tag-badge {
+    background-color: var(--text-dark);
+    color: var(--bg-canvas);
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+    border: 2px solid var(--text-dark);
+}
+
+.left-column, .center-column {
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Card Architecture Subcomponents --- */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-header h2 { font-size: 38px; font-weight: 800; }
+
+.arrow-icon {
+    background-color: var(--bg-accent-yellow);
+    border: var(--border-thick);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.block-stats { background-color: var(--bg-white); }
+
+.badge-discount {
+    background-color: var(--bg-accent-yellow);
+    border: var(--border-thick);
+    border-radius: 12px;
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.brutal-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+.brutal-card p { font-size: 14px; color: #333333; line-height: 1.5; }
+
+.card-footer-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.brutal-divider {
+    border: none;
+    border-top: var(--border-thick);
+    margin: 18px 0;
+}
+
+.time-barcode-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.time-barcode-section h3 { font-size: 28px; font-weight: 800; }
+.barcode-simulation { letter-spacing: 3px; font-weight: bold; font-size: 16px; }
+
+/* Review Component Architecture */
+.stars { font-size: 14px; font-weight: bold; margin-bottom: 15px; }
+.rating-num { text-decoration: underline; margin-left: 6px; }
+
+.avatar-row { display: flex; gap: -8px; margin-bottom: 15px; }
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: var(--border-thick);
+    background-color: #d1cbd4;
+    margin-right: -10px;
+}
+
+/* Graphical Feature Elements */
+.block-cover { text-align: center; }
+.dots-menu { text-align: right; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+
+.graphic-circle-placeholder {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: var(--border-thick);
+    background-color: var(--bg-accent-orange);
+    margin: 0 auto 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.graphic-circle-placeholder i { font-size: 45px; color: #ffffff; }
+
+/* --- Master Forced Button Overrides --- */
+.brutal-button-group {
+    display: inline-flex !important;
+    gap: 15px !important; 
+    background-color: transparent !important; 
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    margin-bottom: 30px !important;
+    margin-top: 15px !important;
+}
+
+.btn-black-pill {
+    background-color: var(--text-dark) !important;
+    color: var(--bg-canvas) !important;
+    border: var(--border-thick) !important;
+    padding: 14px 28px !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    font-size: 15px !important;
+    border-radius: 50px !important; 
+    box-shadow: var(--shadow-flat) !important; 
+    transition: transform 0.1s, box-shadow 0.1s !important;
+    display: inline-block !important;
+}
+
+.btn-black-pill:hover {
+    transform: translate(-2px, -2px) !important;
+    box-shadow: 8px 8px 0px var(--text-dark) !important;
+}
+
+.btn-video-pill {
+    background-color: var(--bg-card) !important;
+    color: var(--text-dark) !important;
+    border: var(--border-thick) !important; 
+    padding: 14px 28px !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    font-size: 15px !important;
+    border-radius: 50px !important; 
+    box-shadow: var(--shadow-flat) !important; 
+    transition: transform 0.1s, box-shadow 0.1s !important;
+    display: inline-block !important;
+}
+
+.btn-video-pill:hover {
+    transform: translate(-2px, -2px) !important;
+    box-shadow: 8px 8px 0px var(--text-dark) !important;
+}
+
+.btn-black-pill:active, .btn-video-pill:active {
+    transform: translate(4px, 4px) !important;
+    box-shadow: 2px 2px 0px var(--text-dark) !important;
+}
+
+/* Pill Group Action Layout */
+.brutal-button-group {
+    display: inline-flex;
+    border: var(--border-thick);
+    border-radius: 35px;
+    background-color: #000000;
+    overflow: hidden;
+    margin-bottom: 50px;
+    box-shadow: var(--shadow-flat);
+}
+
+.btn-black-pill {
+    background-color: var(--text-dark);
+    color: #ffffff;
+    border: none;
+    padding: 16px 35px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.btn-video-pill {
+    background-color: var(--bg-card);
+    border: none;
+    border-left: var(--border-thick);
+    padding: 16px 35px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+/* Bottom Metric Row Layout */
+.bottom-stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.inline-stat {
+    background-color: transparent;
+    border-radius: 24px;
+    margin-bottom: 0;
+}
+
+.diamond-icon { color: var(--bg-accent-orange); font-size: 18px; position: absolute; top: 25px; left: 25px; }
+.inline-stat h2 { margin-left: 25px; font-size: 34px; font-weight: 800; }
+.inline-stat p { margin-left: 25px; margin-top: 10px; }
+
+.category-pill-mini {
+    float: right;
+    border: var(--border-thick);
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    background-color: var(--bg-white);
+}
+
+/* --- Modular Pages Header Design Element --- */
+.subpage-container {
+    flex: 1;
+    width: 100%;
+}
+
+.subpage-header-block {
+    border: var(--border-thick);
+    background-color: var(--bg-white);
+    padding: 40px;
+    border-radius: 28px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-flat);
+}
+
+.subpage-header-block h1 {
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 15px;
+}
+
+/* --- Balanced Features Grid Adjuster (Converts to clean 4-column span row) --- */
+.four-columns-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    gap: 20px !important;
+}
+
+/* --- Full Grid Template Architecture --- */
+.showcase-display-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+}
+
+/* Unique Vault Book Card Blocks */
+.vault-book-card {
+    background-color: var(--bg-white);
+    border: var(--border-thick);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: var(--shadow-flat);
+    position: relative;
+}
+
+.book-visual-box {
+    height: 220px;
+    border: var(--border-thick);
+    border-radius: 16px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vault-book-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 5px; }
+.vault-book-card p { font-size: 14px; color: #555555; }
+
+/* Interactive Filter Navigation Subsystem */
+.filter-shelf {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 35px;
+    flex-wrap: wrap;
+}
+
+.filter-button {
+    background-color: var(--bg-card);
+    border: var(--border-thick);
+    padding: 10px 22px;
+    border-radius: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filter-button.active {
+    background-color: var(--bg-accent-orange);
+    color: #ffffff;
+}
+
+/* --- Complete Footer Alignment Row Fix (Resolves bottom collapsed text stacking) --- */
+.brutal-stats-row-fixed {
+    margin-top: 50px;
+    display: flex;
+    justify-content: space-between;
+    gap: 25px;
+    width: 100%;
+}
+
+.stat-pill-box {
+    flex: 1;
+    background-color: var(--bg-white);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-flat);
+    border-radius: 20px;
+    padding: 22px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.stat-pill-box .pill-number {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.stat-pill-box .pill-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #445577;
+}
+
+/* --- Neo-Brutalist Login Screen Layout Additions --- */
+.login-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 40px 0;
+}
+
+.login-card {
+    max-width: 480px;
+    width: 100%;
+    background-color: var(--bg-white);
+    box-shadow: var(--shadow-flat);
+    text-align: center;
+    padding: 40px;
+}
+
+.login-card h2 {
+    font-size: 32px;
+    font-weight: 800;
+    margin-top: 10px;
+    margin-bottom: 12px;
+}
+
+.login-subtitle {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #444444;
+    margin-bottom: 20px;
+}
+
+.google-btn-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 25px 0;
+    background-color: var(--bg-canvas);
+    border: var(--border-thick);
+    border-radius: 16px;
+    margin: 25px 0;
+}
+
+/* --- Neo-Brutalist Theater Seating Map Style Additions --- */
+.legend-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-dot {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--text-dark);
+    border-radius: 4px;
+}
+
+.theater-box {
+    background-color: var(--bg-white);
+    box-shadow: var(--shadow-flat);
+    padding: 40px;
+    text-align: center;
+}
+
+.hall-front-wall {
+    background-color: var(--text-dark);
+    color: var(--bg-canvas);
+    padding: 10px;
+    font-weight: 800;
+    font-size: 13px;
+    border-radius: 8px;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+}
+
+/* --- 72 Desk Dual-Column Layout with Center Aisle --- */
+.study-hall-grid {
+    display: grid !important;
+    /* 6 Desks (Left Column) - 1 Walking Aisle (40px Spacer) - 6 Desks (Right Column) */
+    grid-template-columns: repeat(6, 52px) 40px repeat(6, 52px) !important;
+    gap: 12px !important;
+    justify-content: center !important;
+    margin-bottom: 40px !important;
+    overflow-x: auto !important;
+    padding: 20px 0 !important;
+}
+
+.desk {
+    width: 52px !important;
+    height: 52px !important;
+    border: var(--border-thick) !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    transition: all 0.1s ease !important;
+}
+
+/* Invisible block to create the empty center walking track channel */
+.aisle-spacer {
+    grid-column: span 1 !important;
+    background: transparent !important;
+    pointer-events: none !important;
+}
+
+.desk {
+    width: 55px;
+    height: 55px;
+    border: var(--border-thick);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.desk.available { background-color: var(--bg-white); box-shadow: 2px 2px 0px var(--text-dark); }
+.desk.available:hover { transform: scale(1.05); background-color: var(--bg-accent-yellow); }
+
+.desk.occupied { 
+    background-color: var(--bg-accent-orange); 
+    color: white; 
+    cursor: not-allowed; 
+}
+
+.desk.selected {
+    background-color: #a1f6b6 !important; 
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0px var(--text-dark) !important;
+}
+
+.aisle-spacer {
+    grid-column: span 1;
+}
+
+.booking-action-panel {
+    border-top: var(--border-thick);
+    padding-top: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Footer Element Signatures */
+.portfolio-footer {
+    text-align: center;
+    padding: 60px 0 10px 0;
+    margin-top: auto;
+    font-weight: 600;
+    font-size: 14px;
+}
+/* --- Hero Mini Checkbox Specs Bar --- */
+.hero-mini-specs {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.hero-mini-specs span {
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #445577;
+}
+
+.hero-mini-specs i {
+    color: var(--bg-accent-orange); /* Gives a nice subtle pop of color to the icons */
+    font-size: 16px;
+}
+/* --- Definitive Spacing Fix (Resolves tight gaps in image_d915ee.png) --- */
+.hero-description-block {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important; /* Pushes the two paragraphs apart cleanly */
+    margin-top: 20px !important; /* Creates breathing room below the main headline */
+    margin-bottom: 30px !important; /* Forcefully pushes the checkmark row down */
+}
+
+.hero-description-block p {
+    margin: 0 0 10px 0 !important; /* Destroys any old hidden margin resets */
+    line-height: 1.6 !important;
+    font-size: 16px !important;
+}
+
+.hero-mini-specs {
+    display: flex !important;
+    gap: 25px !important;
+    margin-top: 10px !important; /* Extra insurance to keep it separated from text */
+    margin-bottom: 35px !important; /* Pushes the main action buttons down beautifully */
+}
+/* --- Master Desk Node Layout Generation Engine Fixes --- */
+.theater-box {
+    background-color: var(--bg-white) !important;
+    border: var(--border-thick) !important;
+    box-shadow: var(--shadow-flat) !important;
+    padding: 40px !important;
+    border-radius: 28px !important;
+    margin-top: 20px !important;
+}
+
+.hall-front-wall {
+    background-color: var(--text-dark) !important;
+    color: var(--bg-canvas) !important;
+    padding: 12px !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    border-radius: 12px !important;
+    margin-bottom: 30px !important;
+    letter-spacing: 1px !important;
+    text-align: center !important;
+}
+
+/* Base desk button structural shape configuration */
+.desk {
+    background-color: var(--bg-white) !important;
+    color: var(--text-dark) !important;
+    border: var(--border-thick) !important;
+    border-radius: 10px !important;
+    width: 54px !important;
+    height: 54px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 800 !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    box-shadow: 3px 3px 0px var(--text-dark) !important;
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s !important;
+}
+
+/* Desk Status State Color Filters */
+.desk.available:hover {
+    background-color: var(--bg-accent-yellow) !important;
+    transform: translate(-2px, -2px) !important;
+    box-shadow: 5px 5px 0px var(--text-dark) !important;
+}
+
+.desk.occupied {
+    background-color: var(--bg-accent-orange) !important;
+    color: #ffffff !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+    opacity: 0.95 !important;
+}
+
+.desk.selected {
+    background-color: #a1f6b6 !important; /* Soft premium green pop */
+    color: var(--text-dark) !important;
+    transform: translate(2px, 2px) !important;
+    box-shadow: 1px 1px 0px var(--text-dark) !important;
+}
+
+/* Legend items spacing patch fix alignment */
+.legend-container {
+    display: flex !important;
+    gap: 25px !important;
+    margin-top: 20px !important;
+}
+
+.legend-item {
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.legend-dot {
+    width: 20px !important;
+    height: 20px !important;
+    border: var(--border-thick) !important;
+    border-radius: 6px !important;
+    display: inline-block !important;
+}
+/* --- Interactive Filter Checkboxes Subsystem --- */
+.filter-checkbox-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    font-weight: 800 !important;
+    font-size: 15px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    padding: 6px 12px !important;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.filter-checkbox-label:hover {
+    background-color: var(--bg-card) !important;
+}
+
+/* Hide the ugly native browser checkbox */
+.filter-checkbox-label input[type="checkbox"] {
+    position: absolute !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    height: 0 !important;
+    width: 0 !important;
+}
+
+/* Build our custom bold brutalist checkbox squares */
+.custom-checkbox {
+    width: 22px !important;
+    height: 22px !important;
+    border: var(--border-thick) !important;
+    border-radius: 6px !important;
+    position: relative !important;
+    display: inline-block !important;
+    transition: all 0.1s ease !important;
+}
+
+.custom-checkbox.available { background-color: var(--bg-white) !important; }
+.custom-checkbox.occupied { background-color: var(--bg-accent-orange) !important; }
+
+/* Add a bright green checkmark accent when clicked/checked */
+.filter-checkbox-label input:checked + .custom-checkbox::after {
+    content: "✓" !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    color: var(--text-dark) !important;
+}
+
+/* If unchecked, dim the custom box slightly to show it's turned off */
+.filter-checkbox-label input:not(:checked) + .custom-checkbox {
+    opacity: 0.3 !important;
+    background-color: #ccc !important;
+}
+/* --- Neo-Brutalist Lightbox Popup Modal Overlay --- */
+.brutal-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(18, 34, 68, 0.75) !important; /* Semi-transparent midnight blue shade overlay */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999 !important; /* Floating stacks safety level index assignment */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Toggle utilities class to animate the slider overlay window popup visible link state */
+.brutal-modal-overlay.modal-visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.brutal-modal-card {
+    background-color: var(--bg-white) !important;
+    border: var(--border-thick) !important;
+    box-shadow: var(--shadow-flat) !important;
+    border-radius: 24px !important;
+    width: 100% !important;
+    max-width: 460px !important;
+    padding: 35px !important;
+    position: relative !important;
+    transform: scale(0.9);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.brutal-modal-overlay.modal-visible .brutal-modal-card {
+    transform: scale(1) !important;
+}
+
+.modal-close-icon {
+    position: absolute !important;
+    top: 15px;
+    right: 20px;
+    font-size: 32px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+/* Form Input Layout Components */
+.form-input-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-bottom: 18px !important;
+    text-align: left !important;
+}
+
+.form-input-group label {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-input-group input {
+    border: var(--border-thick) !important;
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    outline: none !important;
+    background-color: var(--bg-canvas) !important;
+}
+
+.form-input-group input:focus {
+    background-color: var(--bg-white) !important;
+    box-shadow: 3px 3px 0px var(--text-dark) !important;
+}
+
+/* Verification Summary Receipt Block Box */
+.summary-receipt-box {
+    background-color: var(--bg-accent-yellow) !important;
+    border: var(--border-thick) !important;
+    padding: 15px !important;
+    border-radius: 12px !important;
+    margin-bottom: 20px !important;
+    text-align: left !important;
+}
+
+.summary-receipt-box p {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    margin-bottom: 5px !important;
+}
+.summary-receipt-box p:last-child { margin-bottom: 0 !important; }

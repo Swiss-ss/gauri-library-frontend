@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauri Library | Real-Time Seat Selection</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Branded Navigation Bar -->
+    <nav class="navbar-brutal">
+        <div class="logo-box">
+            <img src="assets/Gauri Library.png" alt="Gauri Library Logo" class="logo-image">
+            <div class="logo-text">Gauri Library</div>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">About us</a>
+            <a href="spaces.html" class="active">Live Seats</a>
+            <a href="collections.html">Collections</a>
+            <a href="about.html">Pricing & Hours</a>
+        </div>
+        <div class="auth-buttons"></div>
+    </nav>
+
+    <main class="subpage-container">
+        <div class="subpage-header-block">
+            <div class="badge-discount">Real-Time Digital Ledger</div>
+            <h1>Select Your Preferred Desk</h1>
+            <p>Click on any white desk node below to reserve your space. Red desks are currently occupied by other active shift aspirants.</p>
+            
+            <!-- Map Status Legend indicators -->
+            <div class="legend-container">
+                <label class="filter-checkbox-label">
+                    <input type="checkbox" id="filter-available" checked>
+                    <span class="custom-checkbox available"></span>
+                    Available Desks
+                </label>
+                
+                <label class="filter-checkbox-label">
+                    <input type="checkbox" id="filter-occupied" checked>
+                    <span class="custom-checkbox occupied"></span>
+                    Occupied Desks
+                </label>
+            </div>
+        </div>
+
+        <!-- 72 Seat Architecture Mapping Wrapper -->
+<div class="theater-box">
+            <div class="hall-front-wall"><i class="fa-solid fa-chalkboard"></i> MAIN FRONT WALL / INTRUDER ENTRANCE DIRECTION</div>
+            
+            <div id="dynamic-72-seat-grid" class="study-hall-grid"></div>
+
+            <hr class="brutal-divider">
+
+<hr class="brutal-divider">
+
+            <div class="booking-action-panel" style="flex-direction: column; align-items: stretch; gap: 25px;">
+                
+                <div class="slider-container" style="background: var(--bg-canvas); border: var(--border-thick); padding: 20px; border-radius: 16px; box-shadow: 4px 4px 0px var(--text-dark);">
+                    <label for="study-hours-range" style="font-weight: 800; font-size: 16px; display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>⏰ CHOOSE STUDY BLOCK DURATION:</span>
+                        <span style="color: var(--bg-accent-orange);" id="hours-display-counter">6 Hours</span>
+                    </label>
+                    <input type="range" id="study-hours-range" min="1" max="12" value="6" step="1" style="width: 100%; accent-color: var(--text-dark); cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-top: 5px; color: #556688;">
+                        <span>1 Hr (Quick Session)</span>
+                        <span>6 Hrs (Standard Shift)</span>
+                        <span>12 Hrs (Full Devotion Pass)</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                    <div>
+                        <span style="font-size: 14px; font-weight: 700; color: #556688;">SELECTED TARGET ZONE:</span>
+                        <h3 style="font-size: 28px; font-weight: 900;" id="target-seat-display">None</h3>
+                    </div>
+                    <button class="btn-black-pill" id="open-modal-trigger-btn" style="border-radius: 50px;" disabled>Proceed to Registration Pass →</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="brutal-modal-overlay" id="booking-profile-modal">
+        <div class="brutal-modal-card">
+            <div class="modal-close-icon" id="close-modal-btn">×</div>
+            <div class="badge-discount" style="background-color: var(--bg-accent-orange); color: white;">Aspirant Verification</div>
+            <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 10px;">Secure Allocation Pass</h2>
+            <p style="font-size: 14px; margin-bottom: 25px; font-weight: 600; color: #445577;">Please input your official communication data parameters below to link your desk seat pass assignment profile.</p>
+            
+            <form id="brutal-submission-form" onsubmit="return false;">
+                <div class="form-input-group">
+                    <label>Full Name of Student</label>
+                    <input type="text" id="modal-user-name" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-input-group">
+                    <label>Contact Phone Number</label>
+                    <input type="tel" id="modal-user-phone" placeholder="Enter 10-digit mobile number" required>
+                </div>
+
+                <div class="form-input-group">
+                    <label>Email Notification Address</label>
+                    <input type="email" id="modal-user-email" placeholder="name@domain.com" required>
+                </div>
+
+                <div class="summary-receipt-box">
+                    <p>🎯 Allotted Node: <strong id="summary-seat-tag">None</strong></p>
+                    <p>⚡ Shift Duration: <strong id="summary-hours-tag">6 Hours</strong></p>
+                </div>
+
+                <button type="submit" class="btn-black-pill" id="final-mail-dispatch-btn" style="width: 100%; text-align: center; justify-content: center; margin-top: 10px;">
+                    Generate Receipt & Transmit Confirmation Email ✉
+                </button>
+            </form>
+        </div>
+    </div>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
