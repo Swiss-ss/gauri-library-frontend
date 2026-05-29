@@ -84,7 +84,7 @@ if (signupForm) {
 document.addEventListener("DOMContentLoaded", function () {
     console.log("System initialization...");
 
-    // FETCH REAL LIVE SEAT MATRIX STATUS FROM SERVER
+    // 1. FETCH REAL LIVE SEAT MATRIX STATUS FROM SERVER
     try {
         const gridContainer = document.getElementById("dynamic-72-seat-grid");
         if (gridContainer) {
@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Grid builder ran into an issue: ", error);
     }
 
-    // RUN NAVIGATION & AUTH UTILITIES SAFELY
+    // 2. RUN NAVIGATION & AUTH UTILITIES SAFELY
     try {
         if (isLoggedIn) {
             const authContainer = document.querySelector(".auth-buttons");
@@ -146,6 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+// Structural helper parsing database state values cleanly
 // Structural helper parsing database state values cleanly
 function createRealDeskElement(seatNumber, occupancyData, container) {
     const desk = document.createElement("div");
