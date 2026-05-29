@@ -27,12 +27,26 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Security Gate: Protect spaces.html from unauthenticated visitors
-    //if (window.location.pathname.includes("spaces.html") && !activeUser) {
-      //  alert("🔒 Security Access Pass required. Please sign in first.");
-        //window.location.href = "login.html";
-        //return;
-    //}
+    // INTERCEPT ENGINE: Handle the "View Available Seats" option on the home/index page
+    const viewSeatsBtn = document.getElementById("view-seats-homepage-btn");
+    if (viewSeatsBtn) {
+        viewSeatsBtn.addEventListener("click", (e) => {
+            if (!activeUser) {
+                e.preventDefault(); // Stop standard navigation
+                alert("🔒 Access Denied: Please log in or register an account to view available library seats.");
+                window.location.href = "login.html";
+            } else {
+                window.location.href = "spaces.html";
+            }
+        });
+    }
+
+    // Security Gate: Protect spaces.html directly from custom URL bar entry bypasses
+    if (window.location.pathname.includes("spaces.html") && !activeUser) {
+        alert("🔒 Security Access Pass required. Please sign in first.");
+        window.location.href = "login.html";
+        return;
+    }
 
     // -------------------------------------------------------------------------
     // 2. AUTHENTICATION GATEWAY PIPELINES (login.html actions)
@@ -96,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // 3. THEATER-STYLE SEATING MATRIX ENGINE (spaces.html actions)
     // -------------------------------------------------------------------------
     const gridContainer = document.getElementById("dynamic-72-seat-grid");
-    if (gridContainer) {
+    if (gridContainer && activeUser) {
         let currentlySelectedSeat = null;
 
         const targetDisplay = document.getElementById("target-seat-display");
@@ -197,7 +211,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const payload = {
                 studentName: document.getElementById("modal-user-name").value,
                 studentPhone: document.getElementById("modal-user-phone").value,
-                studentEmail: activeUser ? activeUser.email : "teststudent@gmail.com",
+                studentEmail: activeUser.email,
                 seatNumber: currentlySelectedSeat,
                 duration: rangeSlider.value
             };

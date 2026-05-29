@@ -1,15 +1,51 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-const { LocalStorage } = require('node-localstorage');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Internal local data engine
-const localStorage = new LocalStorage('./scratch');
+// ==========================================================================
+// MONGO_DB CLOUD CONNECTIVITY PIPELINE
+// ==========================================================================
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("🍃 Permanent Cloud MongoDB Cluster connected successfully!"))
+    .catch(err => console.error("❌ MongoDB connection critical failure:", err));
+
+// Database Schema Blueprints
+const UserSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'student' }
+});
+const User = mongoose.model('User', UserSchema);
+
+const SeatLedgerSchema = new mongoose.Schema({
+    seatNumber: { type: Number, required: true, unique: true },
+    name: String,
+    phone: String,
+    email: String,
+    duration: String,
+    timestamp: { type: String, default: () => new Date().toLocaleTimeString() }
+});
+const Seat = mongoose.model('Seat', SeatLedgerSchema);
+
+// Automated 5:00 AM Cloud Purge
+setInterval(async () => {
+    const now = new Date();
+    if (now.getHours() === 5 && now.getMinutes() === 0) {
+        try {
+            await Seat.deleteMany({});
+            console.log("🌅 Daily Morning Reset: All 72 database seat layouts cleared permanently.");
+        } catch (err) {
+            console.error("Reset routine failure:", err);
+        }
+    }
+}, 60000);
 
 const gmailTransporter = nodemailer.createTransport({
     service: 'gmail',
@@ -19,126 +55,183 @@ const gmailTransporter = nodemailer.createTransport({
     }
 });
 
-function getDatabase(key) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : {};
-}
-
-// 5:00 AM Auto-Reset Engine
-setInterval(() => {
-    const now = new Date();
-    if (now.getHours() === 5 && now.getMinutes() === 0) {
-        localStorage.setItem('seat_ledger', JSON.stringify({}));
-        console.log("🌅 All seats successfully cleared for the day.");
-    }
-}, 60000);
-
-// Live Seating Matrix Endpoint
-app.get('/api/seats', (req, res) => {
+// ==========================================================================
+// DATABASE INITIALIZATION ENGINE
+// ==========================================================================
+app.get('/api/admin/init-db', async (req, res) => {
     try {
-        const seatLedger = getDatabase('seat_ledger');
+        const totalUsers = await User.countDocuments({});
+        
+        if (totalUsers === 0) {
+            const seedAdmin = new User({
+                name: "System Admin",
+                email: process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : "admin@library.com",
+                password: "AdminPassword123", 
+                role: "admin"
+            });
+            await seedAdmin.save();
+            return res.status(200).json({ success: true, message: "Database schemas initialized, Admin seed generated!" });
+        }
+        
+        res.status(200).json({ success: true, message: "Database tables are already active." });
+    } catch (err) {
+        console.error("Initialization fault:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ==========================================================================
+// FORCE ADMIN ROLE UPGRADE ACCOUNT ENGINE
+// ==========================================================================
+app.get('/api/admin/make-me-admin', async (req, res) => {
+    try {
+        const targetEmail = "freelancingsarthak@gmail.com";
+        
+        const updatedUser = await User.findOneAndUpdate(
+            { email: targetEmail.toLowerCase() },
+            { $set: { role: 'admin' } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(444).json({ success: false, error: "User account profile not found in MongoDB. Sign up on the website first!" });
+        }
+
+        res.status(200).json({ success: true, message: `Success! ${targetEmail} has been upgraded to ADMIN.`, profile: updatedUser });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ==========================================================================
+// CORE ENDPOINTS
+// ==========================================================================
+
+// Get Seating Matrix
+app.get('/api/seats', async (req, res) => {
+    try {
+        const occupiedSeats = await Seat.find({});
         const dynamicArrayLayout = Array(72).fill(null);
         
-        for (let i = 1; i <= 72; i++) {
-            if (seatLedger[i]) {
-                dynamicArrayLayout[i - 1] = seatLedger[i];
+        occupiedSeats.forEach(seat => {
+            if (seat.seatNumber >= 1 && seat.seatNumber <= 72) {
+                dynamicArrayLayout[seat.seatNumber - 1] = {
+                    name: seat.name,
+                    phone: seat.phone,
+                    email: seat.email,
+                    duration: seat.duration,
+                    timestamp: seat.timestamp
+                };
             }
-        }
+        });
         res.status(200).json(dynamicArrayLayout);
     } catch (err) {
-        console.error("Matrix generation error:", err);
-        res.status(500).json({ error: "Internal server map error" });
+        res.status(500).json({ error: "Failed to map seat arrays." });
     }
 });
 
-// Auth Pipelines: SIGNUP
-app.post('/api/auth/signup', (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-        return res.status(400).json({ success: false, error: "Missing required fields." });
-    }
+// Signup
+app.post('/api/auth/signup', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const cleanEmail = email.trim().toLowerCase();
 
-    const usersDB = getDatabase('users_list');
-    const cleanEmail = email.trim().toLowerCase();
-
-    if (usersDB[cleanEmail]) {
-        return res.status(400).json({ success: false, error: "Account exists." });
-    }
-
-    // Determine role dynamically based on Env variables
-    const assignRole = (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'student';
-    
-    usersDB[cleanEmail] = { name, password, role: assignRole };
-    localStorage.setItem('users_list', JSON.stringify(usersDB));
-
-    res.status(200).json({ success: true, role: assignRole, name });
-});
-
-// Auth Pipelines: LOGIN
-app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ success: false, error: "Missing fields." });
-    }
-
-    const usersDB = getDatabase('users_list');
-    const cleanEmail = email.trim().toLowerCase();
-    const user = usersDB[cleanEmail];
-
-    if (!user || user.password !== password) {
-        return res.status(401).json({ success: false, error: "Invalid credentials." });
-    }
-
-    // Dynamic Admin Role Enforcement Override
-    let activeRole = user.role || 'student';
-    if (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) {
-        activeRole = 'admin';
-    }
-
-    res.status(200).json({ 
-        success: true, 
-        role: activeRole, 
-        name: user.name, 
-        email: cleanEmail 
-    });
-});
-
-// Seat Allocation & Safe Email Dispatcher
-app.post('/api/allocate-seat', (req, res) => {
-    const { studentName, studentPhone, studentEmail, seatNumber, duration } = req.body;
-    const seatLedger = getDatabase('seat_ledger');
-
-    if (seatLedger[seatNumber]) {
-        return res.status(400).json({ success: false, error: "Occupied!" });
-    }
-
-    // Write to file database instantly
-    seatLedger[seatNumber] = {
-        name: studentName,
-        phone: studentPhone,
-        email: studentEmail,
-        duration: duration,
-        timestamp: new Date().toLocaleTimeString()
-    };
-    localStorage.setItem('seat_ledger', JSON.stringify(seatLedger));
-
-    const mailOptions = {
-        from: process.env.GMAIL_USER,
-        to: studentEmail,
-        subject: `[CONFIRMATION] Gauri Library Desk #${seatNumber}`,
-        text: `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${seatNumber}\n• Duration Limit: ${duration} Hours Plan`
-    };
-
-    // Safe delivery execution check
-    gmailTransporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error("❌ Gmail Transporter Error:", error);
-            // We STILL send success: true so the seat registers on the web UI layout 
-            // even if the confirmation mail fails or logs a timeout.
-            return res.status(200).json({ success: true, note: "Mail system offline, space locked." });
+        const existingUser = await User.findOne({ email: cleanEmail });
+        if (existingUser) {
+            return res.status(400).json({ success: false, error: "Account already exists." });
         }
-        res.status(200).json({ success: true });
-    });
+
+        const assignRole = (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'student';
+        
+        const newUser = new User({ name, email: cleanEmail, password, role: assignRole });
+        await newUser.save();
+
+        res.status(200).json({ success: true, role: assignRole, name });
+    } catch (err) {
+        res.status(500).json({ success: false, error: "Signup internal error." });
+    }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const cleanEmail = email.trim().toLowerCase();
+
+        const user = await User.findOne({ email: cleanEmail });
+        if (!user || user.password !== password) {
+            return res.status(401).json({ success: false, error: "Invalid credentials." });
+        }
+
+        let activeRole = user.role || 'student';
+        if (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) {
+            activeRole = 'admin';
+        }
+
+        res.status(200).json({ success: true, role: activeRole, name: user.name, email: cleanEmail });
+    } catch (err) {
+        res.status(500).json({ success: false, error: "Login system processing exception." });
+    }
+});
+
+// Admin Dashboard View Ledger
+app.get('/api/admin/dashboard-ledger', async (req, res) => {
+    try {
+        const occupiedSeats = await Seat.find({});
+        const ledgerMap = {};
+        
+        occupiedSeats.forEach(seat => {
+            ledgerMap[seat.seatNumber] = {
+                name: seat.name,
+                phone: seat.phone,
+                email: seat.email,
+                duration: seat.duration,
+                timestamp: seat.timestamp
+            };
+        });
+        res.status(200).json({ success: true, ledger: ledgerMap });
+    } catch (err) {
+        res.status(500).json({ success: false, error: "Ledger fetch processing error." });
+    }
+});
+
+// Reserve Seat & Email Ticket
+app.post('/api/allocate-seat', async (req, res) => {
+    try {
+        const { studentName, studentPhone, studentEmail, seatNumber, duration } = req.body;
+        const targetSeatNum = parseInt(seatNumber);
+
+        const alreadyTaken = await Seat.findOne({ seatNumber: targetSeatNum });
+        if (alreadyTaken) {
+            return res.status(400).json({ success: false, error: "Occupied!" });
+        }
+
+        const newReservation = new Seat({
+            seatNumber: targetSeatNum,
+            name: studentName,
+            phone: studentPhone,
+            email: studentEmail,
+            duration: duration
+        });
+        await newReservation.save();
+
+        const mailOptions = {
+            from: process.env.GMAIL_USER,
+            to: studentEmail,
+            subject: `[CONFIRMATION] Gauri Library Desk #${targetSeatNum}`,
+            text: `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${targetSeatNum}\n• Duration Limit: ${duration} Hours Plan`
+        };
+
+        gmailTransporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error("❌ Gmail Transporter Error:", error);
+                return res.status(200).json({ success: true, note: "Mail system offline, space locked in cluster." });
+            }
+            res.status(200).json({ success: true });
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: "Allocation transaction system fault." });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
