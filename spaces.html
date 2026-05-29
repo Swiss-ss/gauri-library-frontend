@@ -3,121 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gauri Library | Real-Time Seat Selection</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <title>Gauri Library | Reserve Your Desk</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Clean Workspace Layout Fixes */
+        .workspace-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; }
+        .header-banner { text-align: center; margin-bottom: 30px; }
+        .header-banner h1 { color: #0f2c59; font-size: 2.5rem; margin-bottom: 10px; }
+        .legend-box { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-weight: bold; }
+        
+        /* Interactive 72-Seat Grid Matrix Rules */
+        .study-hall-grid { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr) 40px repeat(6, 1fr); 
+            gap: 12px; 
+            margin: 20px auto; 
+            max-width: 900px; 
+        }
+        .desk { 
+            height: 50px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            user-select: none;
+        }
+        .desk.available { background-color: #e2e8f0; color: #334155; border: 2px solid #cbd5e1; }
+        .desk.available:hover { background-color: #cbd5e1; transform: scale(1.05); }
+        .desk.selected { background-color: #f26f3c !important; color: white !important; border-color: #d9531e !important; }
+        .desk.occupied { background-color: #ef4444; color: white; border: 2px solid #dc2626; cursor: not-allowed; }
+        .aisle-spacer { grid-column: 7; }
+
+        /* Real-Time Sidebar Action Strip Layout */
+        .control-strip { text-align: center; margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; }
+        .btn-prime { background-color: #f26f3c; color: white; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; transition: background 0.2s; }
+        .btn-prime:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+
+        /* Booking Overlay Popup Window Styling */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-overlay.modal-visible { display: flex; }
+        .modal-box { background: white; padding: 30px; border-radius: 12px; max-width: 450px; width: 100%; position: relative; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #334155; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        .close-btn { position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; background: none; border: none; font-weight: bold; }
+    </style>
 </head>
 <body>
 
-    <!-- Branded Navigation Bar -->
-    <nav class="navbar-brutal">
-        <div class="logo-box">
-            <img src="assets/Gauri Library.png" alt="Gauri Library Logo" class="logo-image">
-            <div class="logo-text">Gauri Library</div>
-        </div>
-        <div class="nav-links">
-            <a href="index.html">About us</a>
-            <a href="spaces.html" class="active">Live Seats</a>
-            <a href="collections.html">Collections</a>
-            <a href="about.html">Pricing & Hours</a>
-        </div>
-        <div class="auth-buttons"></div>
-    </nav>
-
-    <main class="subpage-container">
-        <div class="subpage-header-block">
-            <div class="badge-discount">Real-Time Digital Ledger</div>
-            <h1>Select Your Preferred Desk</h1>
-            <p>Click on any white desk node below to reserve your space. Red desks are currently occupied by other active shift aspirants.</p>
-            
-            <!-- Map Status Legend indicators -->
-            <div class="legend-container">
-                <label class="filter-checkbox-label">
-                    <input type="checkbox" id="filter-available" checked>
-                    <span class="custom-checkbox available"></span>
-                    Available Desks
-                </label>
-                
-                <label class="filter-checkbox-label">
-                    <input type="checkbox" id="filter-occupied" checked>
-                    <span class="custom-checkbox occupied"></span>
-                    Occupied Desks
-                </label>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="font-size: 22px; font-weight: bold; color: #0f2c59;">📚 GAURI LIBRARY</div>
+        <div class="auth-buttons">
             </div>
+    </header>
+
+    <main class="workspace-container">
+        <div class="header-banner">
+            <h1>Select Your Preferred Desk Slot</h1>
+            <p>Click on any grey workspace node below to reserve your space for the session.</p>
         </div>
 
-        <!-- 72 Seat Architecture Mapping Wrapper -->
-<div class="theater-box">
-            <div class="hall-front-wall"><i class="fa-solid fa-chalkboard"></i> MAIN FRONT WALL / INTRUDER ENTRANCE DIRECTION</div>
-            
-            <div id="dynamic-72-seat-grid" class="study-hall-grid"></div>
+        <div class="legend-box">
+            <div class="legend-item"><div style="width: 20px; height: 20px; background: #e2e8f0; border-radius: 4px;"></div> Available Desk</div>
+            <div class="legend-item"><div style="width: 20px; height: 20px; background: #f26f3c; border-radius: 4px;"></div> Your Choice</div>
+            <div class="legend-item"><div style="width: 20px; height: 20px; background: #ef4444; border-radius: 4px;"></div> Occupied</div>
+        </div>
 
-            <hr class="brutal-divider">
+        <div style="background: #0f2c59; color: white; text-align: center; padding: 10px; font-weight: bold; border-radius: 6px; max-width: 900px; margin: 0 auto 20px auto; letter-spacing: 2px;">
+            MAIN FRONT WALL / INTRUDER ENTRANCE DIRECTION
+        </div>
 
-<hr class="brutal-divider">
-
-            <div class="booking-action-panel" style="flex-direction: column; align-items: stretch; gap: 25px;">
-                
-                <div class="slider-container" style="background: var(--bg-canvas); border: var(--border-thick); padding: 20px; border-radius: 16px; box-shadow: 4px 4px 0px var(--text-dark);">
-                    <label for="study-hours-range" style="font-weight: 800; font-size: 16px; display: flex; justify-content: space-between; margin-bottom: 10px;">
-                        <span>⏰ CHOOSE STUDY BLOCK DURATION:</span>
-                        <span style="color: var(--bg-accent-orange);" id="hours-display-counter">6 Hours</span>
-                    </label>
-                    <input type="range" id="study-hours-range" min="1" max="12" value="6" step="1" style="width: 100%; accent-color: var(--text-dark); cursor: pointer;">
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-top: 5px; color: #556688;">
-                        <span>1 Hr (Quick Session)</span>
-                        <span>6 Hrs (Standard Shift)</span>
-                        <span>12 Hrs (Full Devotion Pass)</span>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                    <div>
-                        <span style="font-size: 14px; font-weight: 700; color: #556688;">SELECTED TARGET ZONE:</span>
-                        <h3 style="font-size: 28px; font-weight: 900;" id="target-seat-display">None</h3>
-                    </div>
-                    <button class="btn-black-pill" id="open-modal-trigger-btn" style="border-radius: 50px;" disabled>Proceed to Registration Pass →</button>
-                </div>
+        <div id="dynamic-72-seat-grid" class="study-hall-grid">
             </div>
+
+        <div class="control-strip">
+            <p style="font-size: 16px; margin-bottom: 15px; font-weight: bold; color: #334155;">
+                Selected Seat Tracker Target: <span id="target-seat-display" style="color: #f26f3c;">None</span>
+            </p>
+            <button id="open-modal-trigger-btn" class="btn-prime" disabled>Complete Reservation Information ➔</button>
         </div>
     </main>
 
-    <div class="brutal-modal-overlay" id="booking-profile-modal">
-        <div class="brutal-modal-card">
-            <div class="modal-close-icon" id="close-modal-btn">×</div>
-            <div class="badge-discount" style="background-color: var(--bg-accent-orange); color: white;">Aspirant Verification</div>
-            <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 10px;">Secure Allocation Pass</h2>
-            <p style="font-size: 14px; margin-bottom: 25px; font-weight: 600; color: #445577;">Please input your official communication data parameters below to link your desk seat pass assignment profile.</p>
+    <div id="booking-profile-modal" class="modal-overlay">
+        <div class="modal-box">
+            <button id="close-modal-btn" class="close-btn">&times;</button>
+            <h3 style="margin-top: 0; color: #0f2c59; font-size: 20px; margin-bottom: 5px;">Confirm Entry Pass Details</h3>
+            <p id="summary-seat-tag" style="font-weight: bold; color: #f26f3c; margin-bottom: 20px;">Desk Assigned: Position #</p>
             
-            <form id="brutal-submission-form" onsubmit="return false;">
-                <div class="form-input-group">
-                    <label>Full Name of Student</label>
-                    <input type="text" id="modal-user-name" placeholder="Enter your full name" required>
+            <form id="brutal-submission-form">
+                <div class="form-group">
+                    <label>Aspirant Full Name</label>
+                    <input type="text" id="modal-user-name" required placeholder="Enter your full name">
                 </div>
-                
-                <div class="form-input-group">
-                    <label>Contact Phone Number</label>
-                    <input type="tel" id="modal-user-phone" placeholder="Enter 10-digit mobile number" required>
+                <div class="form-group">
+                    <label>Active Contact Number</label>
+                    <input type="tel" id="modal-user-phone" required placeholder="Enter your mobile number">
                 </div>
-
-                <div class="form-input-group">
-                    <label>Email Notification Address</label>
-                    <input type="email" id="modal-user-email" placeholder="name@domain.com" required>
+                <div class="form-group">
+                    <label>Verification Gmail Address</label>
+                    <input type="email" id="modal-user-email" required readonly style="background: #f1f5f9; color: #64748b;">
                 </div>
-
-                <div class="summary-receipt-box">
-                    <p>🎯 Allotted Node: <strong id="summary-seat-tag">None</strong></p>
-                    <p>⚡ Shift Duration: <strong id="summary-hours-tag">6 Hours</strong></p>
+                <div class="form-group">
+                    <label>Allotted Daily Study Slot Duration</label>
+                    <select id="modal-study-duration" style="cursor: pointer;">
+                        <option value="4">4 Hours Plan Session</option>
+                        <option value="6" selected>6 Hours Plan Session</option>
+                        <option value="8">8 Hours Plan Session</option>
+                        <option value="12">12 Hours Full Day Plan</option>
+                    </select>
                 </div>
-
-                <button type="submit" class="btn-black-pill" id="final-mail-dispatch-btn" style="width: 100%; text-align: center; justify-content: center; margin-top: 10px;">
-                    Generate Receipt & Transmit Confirmation Email ✉
+                <button type="submit" id="final-mail-dispatch-btn" class="btn-prime" style="width: 100%; margin-top: 10px; border-radius: 6px;">
+                    Lock Desk Space & Dispatched Email Ticket ✉
                 </button>
             </form>
         </div>
     </div>
-    </main>
 
     <script src="js/main.js"></script>
 </body>
