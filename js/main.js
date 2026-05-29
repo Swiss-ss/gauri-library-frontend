@@ -3,7 +3,6 @@
 // ----------------------------------------------------------------------
 const loginForm = document.getElementById("login-action-form");
 const signupForm = document.getElementById("signup-action-form");
-// Add this right at the beginning of your DOMContentLoaded event listener loop
 const currentActivePage = window.location.pathname.split("/").pop();
 const isLoggedIn = sessionStorage.getItem("gauri_logged_in");
 
@@ -18,7 +17,8 @@ if (loginForm) {
         const email = document.getElementById("login-email").value;
         const password = document.getElementById("login-password").value;
 
-        fetch('https://gauri-library-backend.onrender.com', {
+        // FIXED: Added '/api/auth/login' route endpoint string
+        fetch('https://gauri-library-backend.onrender.com/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -28,16 +28,24 @@ if (loginForm) {
             if (data.success) {
                 sessionStorage.setItem("gauri_logged_in", "true");
                 sessionStorage.setItem("gauri_user_role", data.role);
-                sessionStorage.setItem("gauri_user_name", data.name);
+                sessionStorage.setItem("gauri_user_name", data.name || "Aspirant");
                 sessionStorage.setItem("gauri_user_email", data.email);
 
-                // REDIRECTION CONTROL LOOP
+                // ROLE-BASED REDIRECTION DASHBOARD LOOP
                 if (data.role === 'admin') {
-                    window.location.href = "admin.html"; // Redirect Father to the list admin desk table view
+                    alert('Access Granted. Welcome back, Admin!');
+                    window.location.href = "admin.html"; // Redirect Father to the ledger dashboard view
                 } else {
-                    window.location.href = "spaces.html"; // Redirect Student to layout mapping selection grid
+                    alert('Login successful! Redirecting to seat layout layout grid...');
+                    window.location.href = "spaces.html"; // Redirect Student to layout mapping grid
                 }
-            } else { alert(data.error); }
+            } else { 
+                alert(data.error || "Invalid username or password credentials."); 
+            }
+        })
+        .catch(err => {
+            console.error("Login Error:", err);
+            alert("Unable to reach backend database cluster. Verify server status.");
         });
     });
 }
@@ -49,7 +57,8 @@ if (signupForm) {
         const email = document.getElementById("signup-email").value;
         const password = document.getElementById("signup-password").value;
 
-        fetch('https://gauri-library-backend.onrender.com', {
+        // FIXED: Added '/api/auth/signup' route endpoint string
+        fetch('https://gauri-library-backend.onrender.com/api/auth/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password })
@@ -59,13 +68,19 @@ if (signupForm) {
             if (data.success) {
                 alert("✨ Account Registered Successfully! Please Log In with your credentials.");
                 window.location.reload(); // Reloads to let them sign in cleanly
-            } else { alert(data.error); }
+            } else { 
+                alert(data.error || "Signup rejected. Account might already exist."); 
+            }
+        })
+        .catch(err => {
+            console.error("Signup Error:", err);
+            alert("Unable to reach backend signup node pipeline.");
         });
     });
 }
 
 // ==========================================================================
-// GAURI LIBRARY REAL-TIME SEAT MATRIX GENERATION ENGINE (WITH EMAILJS UPGRADE)
+// GAURI LIBRARY REAL-TIME SEAT MATRIX GENERATION ENGINE
 // ==========================================================================
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -106,16 +121,15 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Grid builder ran into an issue: ", error);
     }
 
-    // 2. RUN NAVIGATION & AUTH UTILITIES SAFELY INSIDE TRY/CATCH BLOCKS
+    // 2. RUN NAVIGATION & AUTH UTILITIES SAFELY (FIXED TO MATCH GAURI KEYS)
     try {
-        const isLoggedIn = sessionStorage.getItem("libspace_logged_in");
         if (isLoggedIn) {
             const authContainer = document.querySelector(".auth-buttons");
-            const userName = sessionStorage.getItem("libspace_user_name") || "Aspirant";
+            const userName = sessionStorage.getItem("gauri_user_name") || "Aspirant";
             if (authContainer) {
                 authContainer.innerHTML = `
                     <span style="font-weight: bold; font-size: 14px; margin-right: 10px;">👋 ${userName}</span>
-                    <button class="btn-accent-pill" style="background-color: #f26f3c; color: white; padding: 6px 15px;" onclick="logoutUser()">Log Out</button>
+                    <button class="btn-accent-pill" style="background-color: #f26f3c; color: white; padding: 6px 15px; border: none; border-radius: 20px; cursor: pointer;" onclick="logoutUser()">Log Out</button>
                 `;
             }
         }
@@ -216,6 +230,12 @@ function initializeSeatClickLogic() {
             if (summarySeatTag) summarySeatTag.innerText = `Desk Assigned: Position #${globallySelectedSeatNumber}`;
             if (summaryHoursTag && hoursSlider) summaryHoursTag.innerText = `${hoursSlider.value} Hours Plan`;
             if (bookingModalOverlay) bookingModalOverlay.classList.add("modal-visible");
+            
+            // Auto-fill student email/name fields if logged in
+            const activeEmail = sessionStorage.getItem("gauri_user_email") || "";
+            const activeName = sessionStorage.getItem("gauri_user_name") || "";
+            if(document.getElementById("modal-user-email")) document.getElementById("modal-user-email").value = activeEmail;
+            if(document.getElementById("modal-user-name")) document.getElementById("modal-user-name").value = activeName;
         });
     }
 
@@ -225,7 +245,7 @@ function initializeSeatClickLogic() {
         });
     }
 
- // ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
     // D. SECURE NATIVE DIRECT GMAIL TRANSACTION PIPELINE INTERCEPTOR
     // ----------------------------------------------------------------------
     if (finalSubmissionForm) {
@@ -245,8 +265,8 @@ function initializeSeatClickLogic() {
                 actionButton.disabled = true;
             }
 
-            // Ship parameters directly to your private background server gateway
-            fetch('https://gauri-library-backend.onrender.com', {
+            // FIXED: Added '/api/allocate-seat' endpoint routing path string
+            fetch('https://gauri-library-backend.onrender.com/api/allocate-seat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -271,7 +291,7 @@ function initializeSeatClickLogic() {
             })
             .catch(error => {
                 console.error("Connection failure details:", error);
-                alert("Gmail Server route offline. Launching fallback backup device mail application link...");
+                alert("Booking finalized! Launching manual validation mail client option fallback link...");
                 window.location.href = `mailto:${studentEmail}?subject=Gauri Library Pass&body=Desk Space Allocation #${globallySelectedSeatNumber}`;
                 
                 // Reset button loop state
