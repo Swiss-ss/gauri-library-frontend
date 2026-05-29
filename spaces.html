@@ -6,7 +6,7 @@
     <title>Gauri Library | Reserve Your Desk</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* Clean Workspace Layout Fixes */
+        /* Workspace Structural Enforcements */
         .workspace-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; }
         .header-banner { text-align: center; margin-bottom: 30px; }
         .header-banner h1 { color: #0f2c59; font-size: 2.5rem; margin-bottom: 10px; }
@@ -38,7 +38,7 @@
         .desk.occupied { background-color: #ef4444; color: white; border: 2px solid #dc2626; cursor: not-allowed; }
         .aisle-spacer { grid-column: 7; }
 
-        /* Real-Time Sidebar Action Strip Layout */
+        /* Action Panel Control Layout */
         .control-strip { text-align: center; margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; }
         .btn-prime { background-color: #f26f3c; color: white; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; transition: background 0.2s; }
         .btn-prime:disabled { background-color: #cbd5e1; cursor: not-allowed; }
@@ -55,11 +55,19 @@
 </head>
 <body>
 
-    <header style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <div style="font-size: 22px; font-weight: bold; color: #0f2c59;">📚 GAURI LIBRARY</div>
+    <nav class="navbar-brutal">
+        <div class="logo-box">
+            <img src="assets/Gauri Library.png" alt="Gauri Library Logo" class="logo-image">
+            <div class="logo-text">Gauri Library</div>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">About us</a>
+            <a href="spaces.html" class="active">Live Seats</a>
+            <a href="about.html">Pricing & Hours</a>
+        </div>
         <div class="auth-buttons">
             </div>
-    </header>
+    </nav>
 
     <main class="workspace-container">
         <div class="header-banner">

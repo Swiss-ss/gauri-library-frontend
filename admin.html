@@ -11,11 +11,12 @@
 
     <nav class="navbar-brutal">
         <div class="logo-box">
-            <img src="assets/logo.png" alt="Gauri Library Logo" class="logo-image">
+            <img src="assets/Gauri Library.png" alt="Gauri Library Logo" class="logo-image">
             <div class="logo-text">Gauri Library Panel</div>
         </div>
         <div class="nav-links">
-            <a href="index.html">Main Site</a>
+            <a href="spaces.html">Live Layout Grid</a>
+            <button class="btn-accent-pill" style="background-color: #f26f3c; color: white; padding: 6px 15px; border: none; border-radius: 20px; cursor: pointer; margin-left: 15px;" onclick="sessionStorage.clear(); window.location.href='index.html';">Log Out</button>
         </div>
     </nav>
 
@@ -38,18 +39,20 @@
                     </tr>
                 </thead>
                 <tbody id="admin-live-rows-tbody">
-                    </tbody>
+                    <tr>
+                        <td colspan="5" style="padding:30px; text-align:center; font-weight:bold; color:#777;">Connecting to active database cluster... ⏳</td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </main>
 
     <script>
-        // Separate custom script just for your father's dashboard view
         document.addEventListener("DOMContentLoaded", function () {
             const tableBody = document.getElementById("admin-live-rows-tbody");
             
-            // Connect to your node background server to pull live allocation stats
-            fetch('http://localhost:3000/api/admin/dashboard-ledger')
+            // CONNECTS SAFELY TO LIVE PRODUCTION RENDER PIPELINE INSTEAD OF LOCALHOST
+            fetch('https://gauri-library-backend.onrender.com/api/admin/dashboard-ledger')
                 .then(res => res.json())
                 .then(data => {
                     const masterList = data.ledger || {};
@@ -61,8 +64,8 @@
                         return;
                     }
 
-                    // Sort numerical list order map items properties into rows
-                    keys.sort((a,b) => a - b).forEach(seatNum => {
+                    // Sort layout tracking elements strictly by desk number ascending
+                    keys.sort((a,b) => parseInt(a) - parseInt(b)).forEach(seatNum => {
                         const info = masterList[seatNum];
                         const row = document.createElement("tr");
                         row.style.borderBottom = "1px solid #eeeeee";
@@ -72,13 +75,14 @@
                             <td style="padding:15px; font-weight:700;">${info.name}</td>
                             <td style="padding:15px; font-weight:700; color:#556688;">${info.phone}</td>
                             <td style="padding:15px; font-weight:600;">${info.email}</td>
-                            <td style="padding:15px;"><span class="badge-discount" style="margin:0; background-color:#fff3cd;">${info.duration} Hours</span></td>
+                            <td style="padding:15px;"><span class="badge-discount" style="margin:0; background-color:#fff3cd; color:#856404;">${info.duration} Hours Plan</span></td>
                         `;
                         tableBody.appendChild(row);
                     });
                 })
                 .catch(err => {
-                    tableBody.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center; font-weight:bold; color:red;">Local server server.js is offline. Please start it in your terminal.</td></tr>`;
+                    console.error("Admin ledger fetch failed:", err);
+                    tableBody.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center; font-weight:bold; color:red;">❌ Unable to sync management ledger data. Verify live backend connectivity server status.</td></tr>`;
                 });
         });
     </script>
