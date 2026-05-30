@@ -3,68 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gauri Library | Authentication Gateway</title>
+    <title>Gauri Library | Access Gateway</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Identity Services -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Google Identity Services client library -->
     <script src="https://accounts.google.com/gsi/client" onload="initGoogleLibrary()" async defer></script>
+    
     <style>
-        .auth-container { max-width: 420px; margin: 60px auto; padding: 10px; }
-        .auth-card { background-color: #ffffff; padding: 40px; border: var(--border-thick); box-shadow: var(--shadow-flat); border-radius: 24px; text-align: center; }
-        .toggle-tabs { display: flex; gap: 10px; margin-bottom: 25px; background: var(--bg-canvas); padding: 6px; border-radius: 50px; border: 2px solid var(--text-dark); }
-        .tab-btn { flex: 1; padding: 10px; font-weight: 800; font-size: 14px; border: none; background: transparent; cursor: pointer; border-radius: 50px; transition: all 0.1s ease; }
-        .tab-btn.active { background-color: var(--text-dark); color: var(--bg-canvas); }
-        .form-box { display: none; }
-        .form-box.active { display: block; }
-        .auth-input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; text-align: left; }
-        .auth-input-group label { font-size: 13px; font-weight: 800; text-transform: uppercase; }
-        .auth-input-group input { border: var(--border-thick); padding: 12px; font-size: 15px; font-weight: 700; border-radius: 12px; background-color: var(--bg-canvas); outline: none; }
-        .auth-input-group input:focus { background-color: #ffffff; box-shadow: 3px 3px 0px var(--text-dark); }
+        /* Premium Aesthetics & Smooth Animations */
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #f6f3ee 0%, #ebe3d8 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Glowing background circles for modern premium vibe */
+        .glow-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.55;
+            pointer-events: none;
+        }
+        .glow-1 {
+            width: 350px;
+            height: 350px;
+            background: #f26f3c;
+            top: -50px;
+            right: -100px;
+        }
+        .glow-2 {
+            width: 400px;
+            height: 400px;
+            background: #f5f79d;
+            bottom: -100px;
+            left: -150px;
+        }
+
+        .auth-wrapper {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 40px 20px;
+        }
+
+        .premium-auth-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 3px solid #122244;
+            border-radius: 32px;
+            box-shadow: 8px 8px 0px #122244;
+            padding: 45px 35px;
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .premium-auth-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 10px 10px 0px #122244;
+        }
+
+        .brand-badge {
+            background-color: #f26f3c;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            border: 2px solid #122244;
+            display: inline-block;
+            margin-bottom: 25px;
+            box-shadow: 2px 2px 0px #122244;
+        }
+
+        .headline {
+            font-size: 32px;
+            font-weight: 900;
+            color: #122244;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+
+        .subheadline {
+            font-size: 15px;
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 35px;
+        }
+
+        /* Programmatic Button Container */
+        .btn-wrapper {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            min-height: 48px;
+        }
+
+        /* Developer Drawer System */
+        .developer-drawer {
+            border-top: 2px dashed #cbd5e1;
+            margin-top: 15px;
+            padding-top: 25px;
+        }
+
+        .drawer-toggle-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.15s;
+        }
+
+        .drawer-toggle-btn:hover {
+            color: #f26f3c;
+        }
+
+        .drawer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+            text-align: left;
+        }
+
+        .drawer-content.active {
+            max-height: 1000px;
+            transition: max-height 0.4s ease-in-out;
+        }
+
+        .drawer-description {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #64748b;
+        }
+
+        .navbar-brutal {
+            background-color: rgba(235, 227, 216, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
     </style>
 </head>
-<body style="background-color: var(--bg-canvas);">
+<body>
 
-    <nav class="navbar-brutal">
+    <!-- Ambient Glowing Graphics -->
+    <div class="glow-circle glow-1"></div>
+    <div class="glow-circle glow-2"></div>
+
+    <nav class="navbar-brutal" style="position: relative; z-index: 10;">
         <div class="logo-box">
             <img src="assets/Gauri Library.png" alt="Gauri Library Logo" class="logo-image">
-            <div class="logo-text">Gauri Library Portal</div>
+            <div class="logo-text" style="font-family: 'Outfit', sans-serif;">Gauri Library Portal</div>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">← Back to Homepage</a>
         </div>
     </nav>
 
-    <main class="auth-container">
-        <div class="auth-card">
-            <div class="badge-discount" style="margin-bottom: 15px;">Single Sign-On Gateway</div>
-            
-            <h2 style="font-size: 26px; font-weight: 900; margin-bottom: 10px;">Library Access</h2>
-            <p style="font-size: 14px; margin-bottom: 25px; color: #555555; line-height: 1.5;">Authenticate using your Gmail account to manage study spaces.</p>
+    <main class="auth-wrapper">
+        <div class="premium-auth-card">
+            <span class="brand-badge">Secured Access Gateway</span>
+            <h1 class="headline">Enter Study Room</h1>
+            <p class="subheadline">Use your Google or Gmail account to instantly log in, reserve space, and manage daily library session passes.</p>
 
-            <!-- Programmatically Rendered Google/Mock SSO Button -->
-            <div id="google-signin-btn-container" style="display: flex; justify-content: center; margin-bottom: 20px; min-height: 44px;"></div>
-
-            <!-- Divider Line -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;">
-                <hr style="flex: 1; border: none; border-top: 2px solid var(--text-dark); opacity: 0.15;">
-                <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">or use developer credentials</span>
-                <hr style="flex: 1; border: none; border-top: 2px solid var(--text-dark); opacity: 0.15;">
+            <!-- Google SSO Button Container -->
+            <div class="btn-wrapper" id="google-signin-btn-container">
+                <!-- Loader shown before library loads -->
+                <div style="font-weight: 700; color: #122244; font-size:14px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="color: #f26f3c;"></i> Loading Identity Provider...
+                </div>
             </div>
 
-            <!-- Consolidated Form: Passwordless Gmail Login -->
-            <form id="gmail-login-action-form">
-                <div class="auth-input-group">
-                    <label>Gmail Address</label>
-                    <input type="email" id="gmail-login-email" placeholder="yourname@gmail.com" required>
+            <!-- Expandable Developer Sandbox Toggle -->
+            <div class="developer-drawer">
+                <button type="button" class="drawer-toggle-btn" onclick="toggleDeveloperDrawer()">
+                    <i class="fa-solid fa-code"></i> Developer Sandbox Settings <i class="fa-solid fa-chevron-down" id="arrow-icon"></i>
+                </button>
+                
+                <div class="drawer-content" id="dev-drawer-panel">
+                    <p class="drawer-description">
+                        <strong>Offline / Local Testing Mode:</strong> Use this form to simulate Google authentication on localhost without registering a project on Google Cloud.
+                    </p>
+                    
+                    <form id="gmail-login-action-form" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                        <div class="auth-input-group">
+                            <label style="font-family: 'Outfit', sans-serif; font-size: 11px;">Simulated Gmail Address</label>
+                            <input type="email" id="gmail-login-email" placeholder="yourname@gmail.com" required style="font-family: 'Outfit', sans-serif;">
+                        </div>
+                        <div class="auth-input-group">
+                            <label style="font-family: 'Outfit', sans-serif; font-size: 11px;">Simulated Profile Name</label>
+                            <input type="text" id="gmail-login-name" placeholder="Full Name" required style="font-family: 'Outfit', sans-serif;">
+                        </div>
+                        <button type="submit" class="btn-black-pill" style="width: 100%; justify-content: center; margin-top: 8px; font-family: 'Outfit', sans-serif;">
+                            Simulate Google Sign-In →
+                        </button>
+                    </form>
                 </div>
-                <div class="auth-input-group">
-                    <label>Aspirant Full Name</label>
-                    <input type="text" id="gmail-login-name" placeholder="Enter Full Name" required>
-                </div>
-                <button type="submit" class="btn-black-pill" style="width: 100%; justify-content: center; margin-top: 10px;">Enter Gauri Library →</button>
-            </form>
+            </div>
         </div>
     </main>
 
     <script>
-        // No client-side tab switching needed. Main logic is routed directly through js/main.js
+        // Toggle the Developer sandbox options drawer
+        function toggleDeveloperDrawer() {
+            const panel = document.getElementById("dev-drawer-panel");
+            const arrow = document.getElementById("arrow-icon");
+            panel.classList.toggle("active");
+            
+            if (panel.classList.contains("active")) {
+                arrow.className = "fa-solid fa-chevron-up";
+                arrow.style.color = "#f26f3c";
+            } else {
+                arrow.className = "fa-solid fa-chevron-down";
+                arrow.style.color = "#64748b";
+            }
+        }
     </script>
     <script src="js/main.js"></script>
 </body>
