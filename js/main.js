@@ -1,6 +1,13 @@
-// Environment-Aware Backend Gateway URI
-const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:3000"
+const isLocal = 
+    window.location.hostname === "localhost" || 
+    window.location.hostname === "127.0.0.1" || 
+    window.location.hostname.startsWith("192.168.") || 
+    window.location.hostname.startsWith("10.") || 
+    window.location.hostname.startsWith("172.") || 
+    window.location.hostname === "";
+
+const API_BASE_URL = isLocal
+    ? `http://${window.location.hostname || "localhost"}:3000`
     : "https://gauri-library-backend.onrender.com";
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -41,97 +48,119 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Security Gate: Protect spaces.html directly from custom URL bar entry bypasses
-    if (window.location.pathname.includes("spaces.html") && !activeUser) {
-        alert("🔒 Security Access Pass required. Please sign in first.");
-        window.location.href = "login.html";
-        return;
+    // Security Gate: Protect spaces.html and admin.html from bypasses
+    if (window.location.pathname.includes("spaces.html")) {
+        if (!activeUser) {
+            alert("🔒 Security Access Pass required. Please sign in first.");
+            window.location.href = "login.html";
+            return;
+        }
+    }
+
+    if (window.location.pathname.includes("admin.html")) {
+        if (!activeUser) {
+            alert("🔒 Security Access Pass required. Please sign in first.");
+            window.location.href = "login.html";
+            return;
+        }
+        if (activeUser.role !== "admin") {
+            alert("🔒 Admin clearance required to access the occupancy ledger.");
+            window.location.href = "spaces.html";
+            return;
+        }
     }
 
     // -------------------------------------------------------------------------
-    // 2. AUTHENTICATION GATEWAY PIPELINES (login.html actions)
+    // 2. GOOGLE SIGN-IN AUTHENTICATION GATEWAY (login.html actions)
     // -------------------------------------------------------------------------
-    const otpRequestForm = document.getElementById("otp-request-action-form");
-    const otpVerifyForm = document.getElementById("otp-verify-action-form");
+    const googleBtnContainer = document.getElementById("google-signin-btn-container");
 
-    if (otpRequestForm) {
-        otpRequestForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const emailInput = document.getElementById("otp-email");
-            const sendBtn = document.getElementById("send-otp-btn");
-            const email = emailInput.value.trim();
-
-            if (!email.toLowerCase().endsWith("@gmail.com")) {
-                alert("🔒 Access Constraint: Please enter a valid Gmail address (@gmail.com).");
+    if (googleBtnContainer) {
+        async function initGoogleSignIn() {
+            // Check if GSI library is loaded, retry if not yet available
+            if (typeof google === "undefined" || !google.accounts || !google.accounts.id) {
+                setTimeout(initGoogleSignIn, 300);
                 return;
             }
 
-            sendBtn.disabled = true;
-            sendBtn.textContent = "Sending Login Code... ⏳";
-
             try {
-                const res = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email })
-                });
+                // Fetch the Google Client ID from backend config
+                const res = await fetch(`${API_BASE_URL}/api/auth/google-config`);
                 const data = await res.json();
-                if (res.ok && data.success) {
-                    alert(`✉ Verification code sent successfully to ${email}! Please check your Gmail inbox.`);
-                    document.getElementById("auth-subheadline").textContent = `We have sent a 6-digit login verification code to: ${email}. Enter details to log in.`;
-                    otpRequestForm.style.display = "none";
-                    otpVerifyForm.style.display = "flex";
+
+                if (data.clientId) {
+                    // Initialize GIS
+                    google.accounts.id.initialize({
+                        client_id: data.clientId,
+                        callback: handleGoogleCredentialResponse
+                    });
+
+                    // Render Google button
+                    google.accounts.id.renderButton(
+                        document.getElementById("google-signin-btn"),
+                        { 
+                            theme: "filled_blue", 
+                            size: "large", 
+                            width: 320,
+                            text: "signin_with",
+                            shape: "pill"
+                        }
+                    );
                 } else {
-                    alert(`❌ Failed to send code: ${data.error}`);
-                    sendBtn.disabled = false;
-                    sendBtn.textContent = "Send Login Code ✉";
+                    document.getElementById("google-signin-btn").innerHTML = `
+                        <div style="background-color: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 13px; text-align: center;">
+                            ⚠️ Backend Google Auth Missing!<br>
+                            Please define GOOGLE_CLIENT_ID in the backend server's .env file.
+                        </div>
+                    `;
                 }
             } catch (err) {
-                alert("Server connection failed. Please ensure the backend server is running.");
-                sendBtn.disabled = false;
-                sendBtn.textContent = "Send Login Code ✉";
+                console.error("Google Sign-In configuration error:", err);
+                document.getElementById("google-signin-btn").innerHTML = `
+                    <div style="background-color: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 13px; text-align: center;">
+                        ❌ Cannot connect to backend auth service.
+                    </div>
+                `;
             }
-        });
-    }
+        }
 
-    if (otpVerifyForm) {
-        otpVerifyForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const email = document.getElementById("otp-email").value.trim();
-            const name = document.getElementById("otp-name").value.trim();
-            const code = document.getElementById("otp-code").value.trim();
-            const verifyBtn = document.getElementById("verify-otp-btn");
-
-            verifyBtn.disabled = true;
-            verifyBtn.textContent = "Verifying Code... ⏳";
+        async function handleGoogleCredentialResponse(response) {
+            const btn = document.getElementById("google-signin-btn");
+            btn.innerHTML = `<span style="font-weight: bold; color: #122244;">Authenticating Session... ⏳</span>`;
 
             try {
-                const res = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
+                const res = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, name, otp: code })
+                    body: JSON.stringify({ credential: response.credential })
                 });
+
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    sessionStorage.setItem("library_user", JSON.stringify({ name: data.name, email: data.email, role: data.role }));
+                    sessionStorage.setItem("library_user", JSON.stringify({ 
+                        name: data.name, 
+                        email: data.email, 
+                        role: data.role 
+                    }));
                     window.location.href = data.role === "admin" ? "admin.html" : "spaces.html";
                 } else {
-                    alert(`❌ Verification Failed: ${data.error}`);
-                    verifyBtn.disabled = false;
-                    verifyBtn.textContent = "Verify & Access Workspace ➔";
+                    alert(`❌ Authentication Failed: ${data.error || "Unknown Error"}`);
+                    initGoogleSignIn(); // Re-render button
                 }
             } catch (err) {
-                alert("Verification failed. Server connection issue.");
-                verifyBtn.disabled = false;
-                verifyBtn.textContent = "Verify & Access Workspace ➔";
+                alert("❌ Authentication request failed. Verify backend server is active.");
+                initGoogleSignIn(); // Re-render button
             }
-        });
+        }
+
+        // Trigger loading routine
+        initGoogleSignIn();
     }
 
     // -------------------------------------------------------------------------
     // 3. THEATER-STYLE SEATING MATRIX ENGINE (spaces.html actions)
     // -------------------------------------------------------------------------
-    const gridContainer = document.getElementById("dynamic-16-seat-grid");
+    const gridContainer = document.getElementById("dynamic-72-seat-grid");
     if (gridContainer && activeUser) {
         let currentlySelectedSeat = null;
 
@@ -150,7 +179,7 @@ document.addEventListener("DOMContentLoaded", function () {
         async function loadSeatLayoutGrid() {
             try {
                 gridContainer.innerHTML = `
-                    <div style='grid-column: span 5; text-align:center; padding: 40px 0;'>
+                    <div style='text-align:center; padding: 40px 0;'>
                         <p style='font-weight:bold; margin-bottom: 10px;'>🍃 Connecting to Cloud Infrastructure...</p>
                         <p style='font-size: 12px; color: #666; max-width: 250px; margin: 0 auto; line-height: 1.4;'>
                             Syncing databases from Render. Please wait... ⏳
@@ -162,38 +191,116 @@ document.addEventListener("DOMContentLoaded", function () {
                 const seatLayoutArray = await res.json();
                 gridContainer.innerHTML = "";
 
-                // Render 4 rows of seats theater-style (2 columns of 8 seats facing each other)
-                // Left Column: 8 seats total (seats 1-8). Right Column: 8 seats total (seats 9-16).
-                // Row i (0 to 3) contains:
-                // - Left Column seats: 2*i + 1, 2*i + 2
-                // - Aisle Spacer
-                // - Right Column seats: 2*i + 9, 2*i + 10
-                for (let i = 0; i < 4; i++) {
-                    // Left Column
-                    const left1 = 2 * i + 1;
-                    const left2 = 2 * i + 2;
-                    appendDeskNode(left1, seatLayoutArray[left1 - 1]);
-                    appendDeskNode(left2, seatLayoutArray[left2 - 1]);
+                // Create Map Wrapper
+                const mapWrapper = document.createElement("div");
+                mapWrapper.className = "library-map-wrapper";
 
-                    // Center walking aisle channel spacer
-                    const aisle = document.createElement("div");
-                    aisle.className = "aisle-spacer";
-                    gridContainer.appendChild(aisle);
-
-                    // Right Column
-                    const right1 = 2 * i + 9;
-                    const right2 = 2 * i + 10;
-                    appendDeskNode(right1, seatLayoutArray[right1 - 1]);
-                    appendDeskNode(right2, seatLayoutArray[right2 - 1]);
+                // Left Wing: 5 blocks of 8 seats (starts: 1, 17, 33, 49, 65)
+                const leftWing = document.createElement("div");
+                leftWing.className = "column-wing left-wing";
+                leftWing.innerHTML = `<h3 class="wing-title"><i class="fa-solid fa-graduation-cap"></i> Left Wing</h3>`;
+                for (let r = 0; r < 5; r++) {
+                    const startSeatNo = r * 16 + 1;
+                    const blockNode = createDeskBlock(startSeatNo, seatLayoutArray);
+                    leftWing.appendChild(blockNode);
                 }
+
+                // Central Aisle
+                const aisle = document.createElement("div");
+                aisle.className = "aisle-spacer-central";
+                aisle.innerHTML = `<div class="aisle-text">WALKING AISLE</div>`;
+
+                // Right Wing: 4 blocks of 8 seats (starts: 9, 25, 41, 57)
+                const rightWing = document.createElement("div");
+                rightWing.className = "column-wing right-wing";
+                rightWing.innerHTML = `<h3 class="wing-title"><i class="fa-solid fa-award"></i> Right Wing</h3>`;
+                for (let r = 0; r < 4; r++) {
+                    const startSeatNo = r * 16 + 9;
+                    const blockNode = createDeskBlock(startSeatNo, seatLayoutArray);
+                    rightWing.appendChild(blockNode);
+                }
+
+                mapWrapper.appendChild(leftWing);
+                mapWrapper.appendChild(aisle);
+                mapWrapper.appendChild(rightWing);
+                
+                gridContainer.appendChild(mapWrapper);
+
             } catch (err) {
+                console.error("Grid loading fault:", err);
                 gridContainer.innerHTML = `
-                    <div style='grid-column: span 5; text-align:center; padding: 30px; color:red; font-weight:bold;'>
+                    <div style='text-align:center; padding: 30px; color:red; font-weight:bold;'>
                         <p>❌ Connection timeout during server boot sequence.</p>
                         <button class="btn-black-pill" onclick="location.reload()" style="margin-top: 15px; padding: 8px 20px;">Wake up & Retry Connection 🔄</button>
                     </div>
                 `;
             }
+        }
+
+        function createDeskBlock(startSeatNo, seatLayoutArray) {
+            const block = document.createElement("div");
+            block.className = "desk-block";
+
+            // Row 1 (4 seats)
+            const row1 = document.createElement("div");
+            row1.className = "desk-row";
+            for (let i = 0; i < 4; i++) {
+                const seatNo = startSeatNo + i;
+                const seatNode = createSeatNode(seatNo, seatLayoutArray[seatNo - 1]);
+                row1.appendChild(seatNode);
+            }
+
+            // Divider Partition
+            const partition = document.createElement("div");
+            partition.className = "desk-partition";
+
+            // Row 2 (4 seats)
+            const row2 = document.createElement("div");
+            row2.className = "desk-row";
+            for (let i = 4; i < 8; i++) {
+                const seatNo = startSeatNo + i;
+                const seatNode = createSeatNode(seatNo, seatLayoutArray[seatNo - 1]);
+                row2.appendChild(seatNode);
+            }
+
+            block.appendChild(row1);
+            block.appendChild(partition);
+            block.appendChild(row2);
+            return block;
+        }
+
+        function createSeatNode(seatNo, bookingData) {
+            const desk = document.createElement("div");
+            desk.className = "desk";
+            desk.textContent = seatNo;
+
+            if (bookingData) {
+                desk.classList.add("occupied");
+                desk.title = `Occupied by ${bookingData.name}`;
+                desk.addEventListener("click", () => {
+                    showOccupiedSeatDetails(seatNo, bookingData);
+                });
+            } else {
+                desk.classList.add("available");
+                desk.addEventListener("click", () => {
+                    const previousSelected = document.querySelector(".desk.selected");
+                    if (previousSelected) previousSelected.classList.remove("selected");
+
+                    if (currentlySelectedSeat === seatNo) {
+                        currentlySelectedSeat = null;
+                        targetDisplay.textContent = "None";
+                        actionBtn.disabled = true;
+                        document.getElementById("slider-control-wrapper").style.display = "none";
+                    } else {
+                        currentlySelectedSeat = seatNo;
+                        desk.classList.add("selected");
+                        targetDisplay.textContent = `Desk Space #${seatNo}`;
+                        actionBtn.disabled = false;
+                        document.getElementById("slider-control-wrapper").style.display = "block";
+                    }
+                });
+            }
+            return desk;
         }
 
         function showOccupiedSeatDetails(seatNo, bookingData) {
@@ -212,7 +319,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="modal-box" style="position: relative;">
                     <button class="close-btn" id="close-details-btn" style="position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; background: none; border: none; font-weight: bold;">&times;</button>
                     <div class="badge-discount" style="background: var(--bg-accent-orange); color: white;">Occupied Desk Info</div>
-                    <h3 style="margin-top: 0; color: #0f2c59; font-size: 22px; margin-bottom: 20px;">Desk Space #${seatNo} Details</h3>
+                    <h3 style="margin-top: 0; color: #122244; font-size: 22px; margin-bottom: 20px;">Desk Space #${seatNo} Details</h3>
                     
                     <div style="display: flex; flex-direction: column; gap: 15px; text-align: left; font-size: 15px;">
                         <div>
@@ -221,7 +328,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                         <div>
                             <span style="font-weight: 800; text-transform: uppercase; font-size: 12px; color: #64748b; display: block;">Contact Number</span>
-                            <span style="font-weight: 700; font-size: 16px; color: #0f2c59;">${bookingData.phone || "N/A"}</span>
+                            <span style="font-weight: 700; font-size: 16px; color: #122244;">${bookingData.phone || "N/A"}</span>
                         </div>
                         <div>
                             <span style="font-weight: 800; text-transform: uppercase; font-size: 12px; color: #64748b; display: block;">Gmail Address</span>
@@ -248,41 +355,6 @@ document.addEventListener("DOMContentLoaded", function () {
             detailsModal.addEventListener("click", (e) => {
                 if (e.target === detailsModal) detailsModal.remove();
             });
-        }
-
-        function appendDeskNode(seatNo, bookingData) {
-            const desk = document.createElement("div");
-            desk.className = "desk";
-            desk.textContent = seatNo;
-
-            if (bookingData) {
-                desk.classList.add("occupied");
-                desk.title = `Occupied by ${bookingData.name}`;
-                // Seat data visible to everyone when clicked
-                desk.addEventListener("click", () => {
-                    showOccupiedSeatDetails(seatNo, bookingData);
-                });
-            } else {
-                desk.classList.add("available");
-                desk.addEventListener("click", () => {
-                    const previousSelected = document.querySelector(".desk.selected");
-                    if (previousSelected) previousSelected.classList.remove("selected");
-
-                    if (currentlySelectedSeat === seatNo) {
-                        currentlySelectedSeat = null;
-                        targetDisplay.textContent = "None";
-                        actionBtn.disabled = true;
-                        document.getElementById("slider-control-wrapper").style.display = "none";
-                    } else {
-                        currentlySelectedSeat = seatNo;
-                        desk.classList.add("selected");
-                        targetDisplay.textContent = `Desk Space #${seatNo}`;
-                        actionBtn.disabled = false;
-                        document.getElementById("slider-control-wrapper").style.display = "block";
-                    }
-                });
-            }
-            gridContainer.appendChild(desk);
         }
 
         // Modal Form Interactivities
@@ -345,5 +417,45 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         loadSeatLayoutGrid();
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. ABOUT PAGE QUERY FORM HANDLER
+    // -------------------------------------------------------------------------
+    const queryForm = document.getElementById("query-dispatch-form");
+    if (queryForm) {
+        queryForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById("query-submit-btn");
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Sending query to library... ✉";
+
+            const payload = {
+                name: document.getElementById("query-name").value,
+                email: document.getElementById("query-email").value,
+                message: document.getElementById("query-message").value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/submit-query`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    alert("🎉 Success! Your query has been successfully dispatched to the Gauri Library Admin. We will reply to your email shortly!");
+                    queryForm.reset();
+                } else {
+                    alert(`❌ Failed to send: ${data.error || "Please try again."}`);
+                }
+            } catch (err) {
+                alert("❌ Connection failure: backend server is offline.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Dispatch Query ➔";
+            }
+        });
     }
 });

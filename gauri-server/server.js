@@ -2,7 +2,11 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const mongoose = require('mongoose');
-require('dotenv').config();
+const { OAuth2Client } = require('google-auth-library');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const app = express();
 app.use(express.json());
@@ -31,9 +35,45 @@ const SeatLedgerSchema = new mongoose.Schema({
     phone: String,
     email: String,
     duration: String,
+    createdAt: { type: Date, default: Date.now },
     timestamp: { type: String, default: () => new Date().toLocaleTimeString() }
 });
 const Seat = mongoose.model('Seat', SeatLedgerSchema);
+
+// Helper function to handle automated seating cleanup
+async function performSeatingCleanup() {
+    try {
+        const now = new Date();
+        const currentHours = now.getHours();
+        
+        // 1. Clear all seats after 10 PM (22:00) and before 6 AM
+        if (currentHours >= 22 || currentHours < 6) {
+            const result = await Seat.deleteMany({});
+            if (result.deletedCount > 0) {
+                console.log(`🌙 Night Cleanout: Wiped all ${result.deletedCount} active seat allocations after 10:00 PM / before 6:00 AM.`);
+            }
+        } else {
+            // 2. Clear individual seats that have exceeded their booked duration
+            const allSeats = await Seat.find({});
+            for (const seat of allSeats) {
+                const durationHours = parseInt(seat.duration) || 6;
+                
+                // Safe fallback for old database entries that do not have the createdAt field
+                const bookingTime = seat.createdAt ? new Date(seat.createdAt).getTime() : Date.now();
+                
+                // Production math: A "6 Hours" booking will expire in exactly 6 hours (6 * 60 * 60 * 1000)
+                const expiryTime = bookingTime + (durationHours * 60 * 60 * 1000);
+                
+                if (Date.now() > expiryTime) {
+                    await Seat.deleteOne({ _id: seat._id });
+                    console.log(`⏰ Expiry Cleanout: Seat #${seat.seatNumber} booked by ${seat.name} has expired after ${durationHours} hours.`);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Seating cleanup execution fault:", err);
+    }
+}
 
 // Automated 5:00 AM Cloud Purge
 setInterval(async () => {
@@ -41,7 +81,7 @@ setInterval(async () => {
     if (now.getHours() === 5 && now.getMinutes() === 0) {
         try {
             await Seat.deleteMany({});
-            console.log("🌅 Daily Morning Reset: All 16 database seat layouts cleared permanently.");
+            console.log("🌅 Daily Morning Reset: All 72 database seat layouts cleared permanently.");
         } catch (err) {
             console.error("Reset routine failure:", err);
         }
@@ -125,11 +165,14 @@ app.get('/api/admin/make-me-admin', async (req, res) => {
 // Get Seating Matrix
 app.get('/api/seats', async (req, res) => {
     try {
+        // Run automated cleanup for night cleanouts and individual expirations
+        await performSeatingCleanup();
+
         const occupiedSeats = await Seat.find({});
-        const dynamicArrayLayout = Array(16).fill(null);
+        const dynamicArrayLayout = Array(72).fill(null);
         
         occupiedSeats.forEach(seat => {
-            if (seat.seatNumber >= 1 && seat.seatNumber <= 16) {
+            if (seat.seatNumber >= 1 && seat.seatNumber <= 72) {
                 dynamicArrayLayout[seat.seatNumber - 1] = {
                     name: seat.name,
                     phone: seat.phone,
@@ -145,72 +188,37 @@ app.get('/api/seats', async (req, res) => {
     }
 });
 
-// Memory Cache for OTP Authentication Codes
-const otps = new Map(); // email -> { otp, expires }
-
-// Send 6-Digit OTP via Nodemailer
-app.post('/api/auth/send-otp', async (req, res) => {
-    try {
-        const { email } = req.body;
-        if (!email) {
-            return res.status(400).json({ success: false, error: "Gmail address is required." });
-        }
-        const cleanEmail = email.trim().toLowerCase();
-
-        if (!cleanEmail.endsWith("@gmail.com")) {
-            return res.status(400).json({ success: false, error: "Only Gmail (@gmail.com) addresses are permitted." });
-        }
-
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expires = Date.now() + 5 * 60 * 1000; // 5 minutes validity
-        otps.set(cleanEmail, { otp, expires });
-
-        const mailOptions = {
-            from: process.env.GMAIL_USER,
-            to: cleanEmail,
-            subject: `[OTP VERIFICATION] Gauri Library Portal Access Code`,
-            text: `Hello Aspirant,\n\nYour 6-digit Gauri Library login verification code is:\n\n🔑 ${otp}\n\nThis verification code is valid for 5 minutes. Please do not share this OTP code with anyone.`
-        };
-
-        gmailTransporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error("❌ Send OTP Mail Error:", error);
-                return res.status(500).json({ success: false, error: "Failed to send code via Gmail: " + error.message });
-            }
-            res.status(200).json({ success: true, message: "Verification code sent to your email!" });
-        });
-    } catch (err) {
-        console.error("Send OTP error:", err);
-        res.status(500).json({ success: false, error: "Nodemailer dispatch processing exception." });
-    }
+// Google Client OAuth Config Endpoint
+app.get('/api/auth/google-config', (req, res) => {
+    res.json({ clientId: process.env.GOOGLE_CLIENT_ID || "" });
 });
 
-// Verify OTP & Complete Login / Register
-app.post('/api/auth/verify-otp', async (req, res) => {
+// Verify Google Token & Sign In / Register
+app.post('/api/auth/google-login', async (req, res) => {
     try {
-        const { email, otp, name } = req.body;
-        if (!email || !otp) {
-            return res.status(400).json({ success: false, error: "Email and verification code are required." });
-        }
-        const cleanEmail = email.trim().toLowerCase();
-
-        const record = otps.get(cleanEmail);
-        if (!record || record.otp !== otp || Date.now() > record.expires) {
-            return res.status(400).json({ success: false, error: "Invalid or expired login code." });
+        const { credential } = req.body;
+        if (!credential) {
+            return res.status(400).json({ success: false, error: "Google credentials are required." });
         }
 
-        // Verification success - clear the code
-        otps.delete(cleanEmail);
+        // Verify Google JWT Token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
 
-        let user = await User.findOne({ email: cleanEmail });
-        const assignRole = (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'student';
+        const payload = ticket.getPayload();
+        const email = payload.email.trim().toLowerCase();
+        const name = payload.name || email.split('@')[0];
+
+        let user = await User.findOne({ email });
+        const assignRole = (process.env.ADMIN_EMAIL && email === process.env.ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'student';
 
         if (!user) {
             user = new User({
-                name: name || cleanEmail.split('@')[0],
-                email: cleanEmail,
-                password: "passwordless-otp",
+                name,
+                email,
+                password: "google-oauth",
                 role: assignRole
             });
             await user.save();
@@ -221,16 +229,19 @@ app.post('/api/auth/verify-otp', async (req, res) => {
             }
         }
 
-        res.status(200).json({ success: true, role: user.role, name: user.name, email: cleanEmail });
+        res.status(200).json({ success: true, role: user.role, name: user.name, email });
     } catch (err) {
-        console.error("Verify OTP error:", err);
-        res.status(500).json({ success: false, error: "OTP validation system processing exception." });
+        console.error("Google Auth verification failure:", err);
+        res.status(401).json({ success: false, error: "Failed to verify Google login session." });
     }
 });
 
 // Admin Dashboard View Ledger
 app.get('/api/admin/dashboard-ledger', async (req, res) => {
     try {
+        // Run automated cleanup before displaying dashboard ledger
+        await performSeatingCleanup();
+
         const occupiedSeats = await Seat.find({});
         const ledgerMap = {};
         
@@ -287,6 +298,37 @@ app.post('/api/allocate-seat', async (req, res) => {
     } catch (err) {
         console.error("Allocation error:", err);
         res.status(500).json({ success: false, error: "Allocation transaction system fault." });
+    }
+});
+
+// Submit General Inquiry Query
+app.post('/api/submit-query', async (req, res) => {
+    try {
+        const { name, email, message } = req.body;
+        if (!name || !email || !message) {
+            return res.status(400).json({ success: false, error: "All fields are required." });
+        }
+
+        const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+        
+        const mailOptions = {
+            from: process.env.GMAIL_USER,
+            to: adminEmail,
+            replyTo: email,
+            subject: `[INQUIRY PORTAL] New Query from ${name}`,
+            text: `Hello Admin,\n\nA new student inquiry has been received through the Gauri Library portal:\n\n• Name: ${name}\n• Email: ${email}\n\n📝 Query Message:\n"${message}"\n\nTo respond, simply reply to this email or send a message directly to ${email}.`
+        };
+
+        gmailTransporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error("❌ Send Query Mail Error:", error);
+                return res.status(500).json({ success: false, error: "Failed to dispatch email inquiry to administrator: " + error.message });
+            }
+            res.status(200).json({ success: true, message: "Your query has been dispatched successfully!" });
+        });
+    } catch (err) {
+        console.error("Query submission error:", err);
+        res.status(500).json({ success: false, error: "Server processing exception during inquiry dispatch." });
     }
 });
 

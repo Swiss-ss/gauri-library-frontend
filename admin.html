@@ -47,12 +47,13 @@
         </div>
     </main>
 
+    <script src="js/main.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const tableBody = document.getElementById("admin-live-rows-tbody");
             
-            // CONNECTS SAFELY TO LIVE PRODUCTION RENDER PIPELINE INSTEAD OF LOCALHOST
-            fetch('https://gauri-library-backend.onrender.com/api/admin/dashboard-ledger')
+            // Connect to backend (environment-aware: localhost or Render production)
+            fetch(`${API_BASE_URL}/api/admin/dashboard-ledger`)
                 .then(res => res.json())
                 .then(data => {
                     const masterList = data.ledger || {};

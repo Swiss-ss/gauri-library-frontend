@@ -6,6 +6,7 @@
     <title>Gauri Library | Access Gateway</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     
     <style>
@@ -156,35 +157,19 @@
 
     <main class="auth-wrapper">
         <div class="premium-auth-card">
-            <span class="brand-badge">Gmail Security System</span>
+            <span class="brand-badge">Google Secure Login</span>
             <h1 class="headline">Enter Study Room</h1>
-            <p class="subheadline" id="auth-subheadline">Enter your Gmail address below. We will dispatch a 6-digit login verification code to your inbox.</p>
+            <p class="subheadline" id="auth-subheadline">Access the Gauri Library reservation portal using your Google Account.</p>
 
-            <!-- Step 1: Send OTP -->
-            <form id="otp-request-action-form" style="display: flex; flex-direction: column; gap: 5px; text-align: left;">
-                <div class="auth-input-group">
-                    <label>Gmail Address</label>
-                    <input type="email" id="otp-email" placeholder="yourname@gmail.com" required>
-                </div>
-                <button type="submit" id="send-otp-btn" class="btn-black-pill" style="width: 100%; justify-content: center; margin-top: 5px; font-family: 'Outfit', sans-serif;">
-                    Send Login Code ✉
-                </button>
-            </form>
-
-            <!-- Step 2: Verify OTP (Hidden Initially) -->
-            <form id="otp-verify-action-form" style="display: none; flex-direction: column; gap: 5px; text-align: left; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
-                <div class="auth-input-group">
-                    <label>Aspirant Full Name</label>
-                    <input type="text" id="otp-name" placeholder="Verify profile name" required>
-                </div>
-                <div class="auth-input-group">
-                    <label>6-Digit Verification Code</label>
-                    <input type="text" id="otp-code" placeholder="••••••" maxlength="6" required style="text-align: center; letter-spacing: 5px; font-size: 18px; font-weight: 800;">
-                </div>
-                <button type="submit" id="verify-otp-btn" class="btn-black-pill" style="width: 100%; justify-content: center; margin-top: 5px; font-family: 'Outfit', sans-serif; background-color: var(--bg-accent-orange) !important;">
-                    Verify & Access Workspace ➔
-                </button>
-            </form>
+            <!-- Google Sign-In Button Container -->
+            <div id="google-signin-btn-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px 0 25px 0; min-height: 50px; width: 100%;">
+                <div id="google-signin-btn" style="width: 100%; display: flex; justify-content: center;"></div>
+            </div>
+            
+            <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0;">
+                🔒 Secure sign-in powered by Google Identity Services.<br>
+                Your data is encrypted and kept private.
+            </p>
         </div>
     </main>
 
