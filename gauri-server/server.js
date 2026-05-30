@@ -11,8 +11,9 @@ app.use(cors());
 // ==========================================================================
 // MONGO_DB CLOUD CONNECTIVITY PIPELINE
 // ==========================================================================
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("🍃 Permanent Cloud MongoDB Cluster connected successfully!"))
+const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/gauri-library";
+mongoose.connect(mongoURI)
+    .then(() => console.log(`🍃 MongoDB connected successfully! Target: ${mongoURI.startsWith("mongodb://127.0.0.1") ? "Local Database Instance" : "Cloud Cluster"}`))
     .catch(err => console.error("❌ MongoDB connection critical failure:", err));
 
 // Database Schema Blueprints
@@ -40,18 +41,32 @@ setInterval(async () => {
     if (now.getHours() === 5 && now.getMinutes() === 0) {
         try {
             await Seat.deleteMany({});
-            console.log("🌅 Daily Morning Reset: All 72 database seat layouts cleared permanently.");
+            console.log("🌅 Daily Morning Reset: All 16 database seat layouts cleared permanently.");
         } catch (err) {
             console.error("Reset routine failure:", err);
         }
     }
 }, 60000);
 
+const appPassword = process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '') : '';
+
 const gmailTransporter = nodemailer.createTransport({
     service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
+        pass: appPassword
+    }
+});
+
+// Verify SMTP connection on startup
+gmailTransporter.verify((error, success) => {
+    if (error) {
+        console.error("❌ Gmail SMTP verification failed:", error.message);
+    } else {
+        console.log("📨 Gmail SMTP connection verified! Ready to dispatch tickets.");
     }
 });
 
@@ -111,10 +126,10 @@ app.get('/api/admin/make-me-admin', async (req, res) => {
 app.get('/api/seats', async (req, res) => {
     try {
         const occupiedSeats = await Seat.find({});
-        const dynamicArrayLayout = Array(72).fill(null);
+        const dynamicArrayLayout = Array(16).fill(null);
         
         occupiedSeats.forEach(seat => {
-            if (seat.seatNumber >= 1 && seat.seatNumber <= 72) {
+            if (seat.seatNumber >= 1 && seat.seatNumber <= 16) {
                 dynamicArrayLayout[seat.seatNumber - 1] = {
                     name: seat.name,
                     phone: seat.phone,
@@ -130,47 +145,39 @@ app.get('/api/seats', async (req, res) => {
     }
 });
 
-// Signup
-app.post('/api/auth/signup', async (req, res) => {
+// Gmail Unified Login & Auto-Signup
+app.post('/api/auth/gmail-login', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { email, name } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, error: "Gmail address is required." });
+        }
         const cleanEmail = email.trim().toLowerCase();
 
-        const existingUser = await User.findOne({ email: cleanEmail });
-        if (existingUser) {
-            return res.status(400).json({ success: false, error: "Account already exists." });
-        }
-
+        let user = await User.findOne({ email: cleanEmail });
         const assignRole = (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'student';
-        
-        const newUser = new User({ name, email: cleanEmail, password, role: assignRole });
-        await newUser.save();
 
-        res.status(200).json({ success: true, role: assignRole, name });
-    } catch (err) {
-        res.status(500).json({ success: false, error: "Signup internal error." });
-    }
-});
-
-// Login
-app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const cleanEmail = email.trim().toLowerCase();
-
-        const user = await User.findOne({ email: cleanEmail });
-        if (!user || user.password !== password) {
-            return res.status(401).json({ success: false, error: "Invalid credentials." });
+        if (!user) {
+            // Register a new user automatically
+            user = new User({
+                name: name || cleanEmail.split('@')[0],
+                email: cleanEmail,
+                password: "gmail-authenticated",
+                role: assignRole
+            });
+            await user.save();
+        } else {
+            // Update role if admin configuration changed
+            if (user.role !== assignRole) {
+                user.role = assignRole;
+                await user.save();
+            }
         }
 
-        let activeRole = user.role || 'student';
-        if (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) {
-            activeRole = 'admin';
-        }
-
-        res.status(200).json({ success: true, role: activeRole, name: user.name, email: cleanEmail });
+        res.status(200).json({ success: true, role: user.role, name: user.name, email: cleanEmail });
     } catch (err) {
-        res.status(500).json({ success: false, error: "Login system processing exception." });
+        console.error("Gmail login error:", err);
+        res.status(500).json({ success: false, error: "Gmail login system processing exception." });
     }
 });
 
@@ -222,16 +229,16 @@ app.post('/api/allocate-seat', async (req, res) => {
             text: `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${targetSeatNum}\n• Duration Limit: ${duration} Hours Plan`
         };
 
-// Change this block in your server.js to catch the real error:
         gmailTransporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.error("❌ Gmail Transporter Error:", error);
-                // Temporarily return the actual error message to the frontend so we can read it!
-                return res.status(500).json({ success: false, error: "Mail system error: " + error.message });
+                // Return success: true but with mailSent: false and error message
+                return res.status(200).json({ success: true, mailSent: false, error: error.message });
             }
-            res.status(200).json({ success: true });
+            res.status(200).json({ success: true, mailSent: true });
         });
     } catch (err) {
+        console.error("Allocation error:", err);
         res.status(500).json({ success: false, error: "Allocation transaction system fault." });
     }
 });

@@ -1,0 +1,11 @@
+# Node modules
+node_modules/
+gauri-server/node_modules/
+
+# Local env files
+.env
+gauri-server/.env
+
+# OS files
+.DS_Store
+Thumbs.db

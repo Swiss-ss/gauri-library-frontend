@@ -581,12 +581,12 @@ body {
     letter-spacing: 1px;
 }
 
-/* --- 72 Desk Dual-Column Layout with Center Aisle --- */
+/* --- 16 Desk Theater-Style Dual-Column Layout with Center Aisle --- */
 .study-hall-grid {
     display: grid !important;
-    /* 6 Desks (Left Column) - 1 Walking Aisle (40px Spacer) - 6 Desks (Right Column) */
-    grid-template-columns: repeat(6, 52px) 40px repeat(6, 52px) !important;
-    gap: 12px !important;
+    /* 2 Desks (Left Column) - 1 Aisle Spacer (80px) - 2 Desks (Right Column) */
+    grid-template-columns: 54px 54px 80px 54px 54px !important;
+    gap: 15px 10px !important;
     justify-content: center !important;
     margin-bottom: 40px !important;
     overflow-x: auto !important;
@@ -759,10 +759,16 @@ body {
 .desk.occupied {
     background-color: var(--bg-accent-orange) !important;
     color: #ffffff !important;
-    cursor: not-allowed !important;
-    box-shadow: none !important;
-    transform: none !important;
+    cursor: pointer !important;
+    box-shadow: 3px 3px 0px var(--text-dark) !important;
     opacity: 0.95 !important;
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s !important;
+}
+
+.desk.occupied:hover {
+    background-color: #e05e2b !important;
+    transform: translate(-2px, -2px) !important;
+    box-shadow: 5px 5px 0px var(--text-dark) !important;
 }
 
 .desk.selected {
@@ -770,6 +776,19 @@ body {
     color: var(--text-dark) !important;
     transform: translate(2px, 2px) !important;
     box-shadow: 1px 1px 0px var(--text-dark) !important;
+}
+
+/* Backrest borders for visual indicators of desks facing each other inside columns */
+/* Column index 1 & 4 (odd seats: 1, 3, 5, 7, 9, 11, 13, 15) face right (backrest on left) */
+.study-hall-grid .desk:nth-child(5n+1),
+.study-hall-grid .desk:nth-child(5n+4) {
+    border-left: 8px solid var(--text-dark) !important;
+}
+
+/* Column index 2 & 5 (even seats: 2, 4, 6, 8, 10, 12, 14, 16) face left (backrest on right) */
+.study-hall-grid .desk:nth-child(5n+2),
+.study-hall-grid .desk:nth-child(5n+5) {
+    border-right: 8px solid var(--text-dark) !important;
 }
 
 /* Legend items spacing patch fix alignment */
@@ -949,3 +968,36 @@ body {
     margin-bottom: 5px !important;
 }
 .summary-receipt-box p:last-child { margin-bottom: 0 !important; }
+
+/* Custom Google Button Styling */
+.google-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #ffffff !important;
+    border: var(--border-thick) !important;
+    border-radius: 50px !important;
+    padding: 10px 24px !important;
+    font-weight: 800 !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    box-shadow: var(--shadow-flat) !important;
+    transition: transform 0.1s, box-shadow 0.1s !important;
+    gap: 10px !important;
+}
+
+.google-btn:hover {
+    transform: translate(-2px, -2px) !important;
+    box-shadow: 8px 8px 0px var(--text-dark) !important;
+    background-color: #f8fafc !important;
+}
+
+.google-btn:active {
+    transform: translate(4px, 4px) !important;
+    box-shadow: 2px 2px 0px var(--text-dark) !important;
+}
+
+.google-icon {
+    width: 18px !important;
+    height: 18px !important;
+}
