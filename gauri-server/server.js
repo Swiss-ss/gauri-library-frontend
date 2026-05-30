@@ -88,26 +88,32 @@ setInterval(async () => {
     }
 }, 60000);
 
-const appPassword = process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '') : '';
-
-const gmailTransporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports (automatically uses STARTTLS)
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: appPassword
+// Helper to dispatch email via Vercel Serverless Function to bypass Render outbound port blocks
+async function sendDispatchEmail(to, subject, text, req) {
+    const frontendOrigin = req.headers.origin || "https://gauri-library-frontend.vercel.app";
+    const vercelEmailUrl = `${frontendOrigin.replace(/\/$/, '')}/api/send-email`;
+    
+    console.log(`✉ Dispatching email via Vercel endpoint: ${vercelEmailUrl}`);
+    
+    try {
+        const response = await fetch(vercelEmailUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to, subject, text })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            console.log(`✅ Vercel Email Dispatch Success! Target: ${to}`);
+            return { success: true };
+        } else {
+            console.error(`❌ Vercel Email Dispatch Failed:`, data.error || "Unknown error");
+            throw new Error(data.error || "Failed to dispatch via serverless router.");
+        }
+    } catch (err) {
+        console.error("❌ Email dispatch system fault:", err.message);
+        throw err;
     }
-});
-
-// Verify SMTP connection on startup
-gmailTransporter.verify((error, success) => {
-    if (error) {
-        console.error("❌ Gmail SMTP verification failed:", error.message);
-    } else {
-        console.log("📨 Gmail SMTP connection verified! Ready to dispatch tickets.");
-    }
-});
+}
 
 // ==========================================================================
 // DATABASE INITIALIZATION ENGINE
@@ -284,21 +290,17 @@ app.post('/api/allocate-seat', async (req, res) => {
         });
         await newReservation.save();
 
-        const mailOptions = {
-            from: process.env.GMAIL_USER,
-            to: studentEmail,
-            subject: `[CONFIRMATION] Gauri Library Desk #${targetSeatNum}`,
-            text: `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${targetSeatNum}\n• Duration Limit: ${duration} Hours Plan`
-        };
+        const mailSubject = `[CONFIRMATION] Gauri Library Desk #${targetSeatNum}`;
+        const mailText = `Hello ${studentName},\n\nYour study desk space selection at Gauri Library has been booked!\n\n• Seat: Desk Space #${targetSeatNum}\n• Duration Limit: ${duration} Hours Plan`;
 
-        gmailTransporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error("❌ Gmail Transporter Error:", error);
-                // Return success: true but with mailSent: false and error message
-                return res.status(200).json({ success: true, mailSent: false, error: error.message });
-            }
+        try {
+            await sendDispatchEmail(studentEmail, mailSubject, mailText, req);
             res.status(200).json({ success: true, mailSent: true });
-        });
+        } catch (mailErr) {
+            console.error("❌ Seat booking confirmation email failed to dispatch:", mailErr.message);
+            // Return success: true but with mailSent: false and error message so booking doesn't get blocked
+            res.status(200).json({ success: true, mailSent: false, error: mailErr.message });
+        }
     } catch (err) {
         console.error("Allocation error:", err);
         res.status(500).json({ success: false, error: "Allocation transaction system fault." });
@@ -319,22 +321,16 @@ app.post('/api/submit-query', async (req, res) => {
         }
 
         const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
-        
-        const mailOptions = {
-            from: process.env.GMAIL_USER,
-            to: adminEmail,
-            replyTo: email,
-            subject: `[INQUIRY PORTAL] New Query from ${name}`,
-            text: `Hello Admin,\n\nA new student inquiry has been received through the Gauri Library portal:\n\n• Name: ${name}\n• Email: ${email}\n\n📝 Query Message:\n"${message}"\n\nTo respond, simply reply to this email or send a message directly to ${email}.`
-        };
+        const mailSubject = `[INQUIRY PORTAL] New Query from ${name}`;
+        const mailText = `Hello Admin,\n\nA new student inquiry has been received through the Gauri Library portal:\n\n• Name: ${name}\n• Email: ${email}\n\n📝 Query Message:\n"${message}"\n\nTo respond, simply reply to this email (replyTo: ${email}) or send a message directly to ${email}.`;
 
-        gmailTransporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error("❌ Send Query Mail Error:", error);
-                return res.status(500).json({ success: false, error: "Failed to dispatch email inquiry to administrator: " + error.message });
-            }
+        try {
+            await sendDispatchEmail(adminEmail, mailSubject, mailText, req);
             res.status(200).json({ success: true, message: "Your query has been dispatched successfully!" });
-        });
+        } catch (mailErr) {
+            console.error("❌ Inquiry email failed to dispatch:", mailErr.message);
+            res.status(500).json({ success: false, error: "Failed to dispatch email inquiry to administrator: " + mailErr.message });
+        }
     } catch (err) {
         console.error("Query submission error:", err);
         res.status(500).json({ success: false, error: "Server processing exception during inquiry dispatch." });

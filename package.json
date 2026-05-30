@@ -1,0 +1,9 @@
+{
+  "name": "gauri-library-frontend",
+  "version": "1.0.0",
+  "description": "Gauri Library Frontend Static Portal",
+  "main": "index.html",
+  "dependencies": {
+    "nodemailer": "^6.9.13"
+  }
+}
