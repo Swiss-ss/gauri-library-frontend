@@ -4,8 +4,55 @@ const API_BASE_URL = window.location.hostname === "localhost" || window.location
     : "https://gauri-library-backend.onrender.com";
 
 // -------------------------------------------------------------------------
+// GOOGLE IDENTITY SERVICES CONFIGURATION
+// -------------------------------------------------------------------------
+// REPLACE THIS with your real Google Client ID when deploying to production!
+// Example: "123456789-abcdef.apps.googleusercontent.com"
+const GOOGLE_CLIENT_ID = "YOUR_REAL_CLIENT_ID_HERE";
+
+// -------------------------------------------------------------------------
 // GOOGLE IDENTITY SERVICES & MOCK SIGN-IN GLOBAL HANDLERS
 // -------------------------------------------------------------------------
+window.initGoogleLibrary = function () {
+    const container = document.getElementById("google-signin-btn-container");
+    if (!container) return;
+
+    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "YOUR_REAL_CLIENT_ID_HERE" && !GOOGLE_CLIENT_ID.includes("dummy")) {
+        try {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: window.handleGoogleSignIn
+            });
+            google.accounts.id.renderButton(
+                container,
+                { theme: "outline", size: "large", shape: "pill" }
+            );
+        } catch (e) {
+            console.error("Google accounts library initialization failed:", e);
+            window.renderMockButton();
+        }
+    } else {
+        window.renderMockButton();
+    }
+};
+
+window.renderMockButton = function () {
+    const container = document.getElementById("google-signin-btn-container");
+    if (container) {
+        container.innerHTML = `
+            <button type="button" id="custom-google-signin-btn" class="google-btn" onclick="handleMockGoogleSignIn()">
+                <svg class="google-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+                    <path fill="#EA4335" d="M12 5.04c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.5 15 0 12 0 7.3 0 3.3 2.7 1.3 6.6l3.9 3C6.2 6.8 8.9 5.04 12 5.04z"/>
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
+                    <path fill="#FBBC05" d="M5.2 14.8c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L1.3 7.8C.5 9.4 0 11.2 0 13s.5 3.6 1.3 5.2l3.9-3.2z"/>
+                    <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-1.8-6.8-4.5l-3.9 3C3.3 21.3 7.3 24 12 24z"/>
+                </svg>
+                <span>Sign in with Google</span>
+            </button>
+        `;
+    }
+};
+
 window.handleGoogleSignIn = async function (response) {
     try {
         const credential = response.credential;
@@ -23,18 +70,11 @@ window.handleGoogleSignIn = async function (response) {
 };
 
 window.handleMockGoogleSignIn = function () {
-    // Check if user changed the dummy client ID to a real one
-    const clientIDElement = document.getElementById("g_id_onload");
-    if (clientIDElement) {
-        const clientId = clientIDElement.getAttribute("data-client_id");
-        if (clientId && !clientId.includes("dummyclientid")) {
-            // A real client ID is configured!
-            google.accounts.id.prompt();
-            return;
-        }
+    // If a real client ID is set, use google API instead of chooser
+    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "YOUR_REAL_CLIENT_ID_HERE" && !GOOGLE_CLIENT_ID.includes("dummy")) {
+        google.accounts.id.prompt();
+        return;
     }
-
-    // Otherwise, show mock Google Account Chooser
     showMockGoogleAccountChooser();
 };
 
@@ -161,22 +201,11 @@ function parseJwt(token) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Determine Google SSO Button Mode: Mock custom button or real official button
-    const gIdElement = document.getElementById("g_id_onload");
-    const officialBtnWrapper = document.getElementById("official-google-btn-wrapper");
-    const customBtnWrapper = document.getElementById("custom-google-btn-wrapper");
-
-    if (gIdElement) {
-        const client_id = gIdElement.getAttribute("data-client_id");
-        if (client_id && !client_id.includes("dummyclientid")) {
-            // Real client ID configured: Show official button, hide custom mock button
-            if (officialBtnWrapper) officialBtnWrapper.style.display = "flex";
-            if (customBtnWrapper) customBtnWrapper.style.display = "none";
-        } else {
-            // Dummy client ID: Show mock button, hide official button
-            if (officialBtnWrapper) officialBtnWrapper.style.display = "none";
-            if (customBtnWrapper) customBtnWrapper.style.display = "flex";
-        }
+    // Render Google / Mock Sign-In button on load
+    if (typeof google !== "undefined" && google.accounts) {
+        window.initGoogleLibrary();
+    } else {
+        window.renderMockButton();
     }
 
     const authContainer = document.querySelector(".auth-buttons");
