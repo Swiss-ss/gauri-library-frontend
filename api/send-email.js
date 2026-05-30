@@ -1,3 +1,4 @@
+// Gauri Library Vercel Email Gateway Router - Production Environment Active
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
