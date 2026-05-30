@@ -3,210 +3,7 @@ const API_BASE_URL = window.location.hostname === "localhost" || window.location
     ? "http://localhost:3000"
     : "https://gauri-library-backend.onrender.com";
 
-// -------------------------------------------------------------------------
-// GOOGLE IDENTITY SERVICES CONFIGURATION
-// -------------------------------------------------------------------------
-// REPLACE THIS with your real Google Client ID when deploying to production!
-// Example: "123456789-abcdef.apps.googleusercontent.com"
-const GOOGLE_CLIENT_ID = "YOUR_REAL_CLIENT_ID_HERE";
-
-// -------------------------------------------------------------------------
-// GOOGLE IDENTITY SERVICES & MOCK SIGN-IN GLOBAL HANDLERS
-// -------------------------------------------------------------------------
-window.initGoogleLibrary = function () {
-    const container = document.getElementById("google-signin-btn-container");
-    if (!container) return;
-
-    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "YOUR_REAL_CLIENT_ID_HERE" && !GOOGLE_CLIENT_ID.includes("dummy")) {
-        try {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: window.handleGoogleSignIn
-            });
-            google.accounts.id.renderButton(
-                container,
-                { theme: "outline", size: "large", shape: "pill" }
-            );
-        } catch (e) {
-            console.error("Google accounts library initialization failed:", e);
-            window.renderMockButton();
-        }
-    } else {
-        window.renderMockButton();
-    }
-};
-
-window.renderMockButton = function () {
-    const container = document.getElementById("google-signin-btn-container");
-    if (container) {
-        container.innerHTML = `
-            <button type="button" id="custom-google-signin-btn" class="google-btn" onclick="handleMockGoogleSignIn()">
-                <svg class="google-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
-                    <path fill="#EA4335" d="M12 5.04c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.5 15 0 12 0 7.3 0 3.3 2.7 1.3 6.6l3.9 3C6.2 6.8 8.9 5.04 12 5.04z"/>
-                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
-                    <path fill="#FBBC05" d="M5.2 14.8c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L1.3 7.8C.5 9.4 0 11.2 0 13s.5 3.6 1.3 5.2l3.9-3.2z"/>
-                    <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-1.8-6.8-4.5l-3.9 3C3.3 21.3 7.3 24 12 24z"/>
-                </svg>
-                <span>Sign in with Google</span>
-            </button>
-        `;
-    }
-};
-
-window.handleGoogleSignIn = async function (response) {
-    try {
-        const credential = response.credential;
-        const payload = parseJwt(credential);
-        
-        if (payload && payload.email) {
-            await window.selectMockGoogleAccount(payload.email, payload.name);
-        } else {
-            alert("❌ Could not read Google account profile info.");
-        }
-    } catch (err) {
-        console.error("Google Sign-In Error:", err);
-        alert("Google authentication communication offline.");
-    }
-};
-
-window.handleMockGoogleSignIn = function () {
-    // If a real client ID is set, use google API instead of chooser
-    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "YOUR_REAL_CLIENT_ID_HERE" && !GOOGLE_CLIENT_ID.includes("dummy")) {
-        google.accounts.id.prompt();
-        return;
-    }
-    showMockGoogleAccountChooser();
-};
-
-window.selectMockGoogleAccount = async function (email, name) {
-    // Remove chooser modals if open
-    const chooser = document.getElementById("google-chooser-modal");
-    if (chooser) chooser.remove();
-    const style = document.getElementById("chooser-hover-styles");
-    if (style) style.remove();
-
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/auth/gmail-login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, name })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-            sessionStorage.setItem("library_user", JSON.stringify({ name: data.name, email: data.email, role: data.role }));
-            window.location.href = data.role === "admin" ? "admin.html" : "spaces.html";
-        } else {
-            alert(`❌ Access Denied: ${data.error}`);
-        }
-    } catch (err) {
-        alert("Server validation processing failed.");
-    }
-};
-
-window.selectCustomMockGoogleAccount = function () {
-    const email = prompt("Enter simulated Google Gmail address:");
-    if (!email) return;
-    if (!email.toLowerCase().endsWith("@gmail.com")) {
-        alert("🔒 Google SSO Simulation Constraint: Please enter a valid Gmail address (@gmail.com).");
-        return;
-    }
-    const name = prompt("Enter simulated Google Profile Name:") || email.split('@')[0];
-    window.selectMockGoogleAccount(email, name);
-};
-
-function showMockGoogleAccountChooser() {
-    const existing = document.getElementById("google-chooser-modal");
-    if (existing) existing.remove();
-
-    const chooserModal = document.createElement("div");
-    chooserModal.id = "google-chooser-modal";
-    chooserModal.className = "modal-overlay modal-visible";
-    chooserModal.style.display = "flex";
-    chooserModal.style.zIndex = "10000";
-
-    chooserModal.innerHTML = `
-        <div class="modal-box" style="max-width: 400px; padding: 25px; border-radius: 16px; border: 3px solid #122244; box-shadow: 6px 6px 0px #122244; background: #ffffff;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <svg style="width: 32px; height: 32px; margin-bottom: 8px;" viewBox="0 0 24 24">
-                    <path fill="#EA4335" d="M12 5.04c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.5 15 0 12 0 7.3 0 3.3 2.7 1.3 6.6l3.9 3C6.2 6.8 8.9 5.04 12 5.04z"/>
-                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
-                    <path fill="#FBBC05" d="M5.2 14.8c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L1.3 7.8C.5 9.4 0 11.2 0 13s.5 3.6 1.3 5.2l3.9-3.2z"/>
-                    <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-1.8-6.8-4.5l-3.9 3C3.3 21.3 7.3 24 12 24z"/>
-                </svg>
-                <h3 style="margin: 0; color: #122244; font-size: 18px; font-weight: 800;">Sign in with Google</h3>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">to continue to Gauri Library</p>
-            </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-                <div class="google-account-row" onclick="selectMockGoogleAccount('rma.pndy@gmail.com', 'System Admin')" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #cbd5e1; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #122244; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">SA</div>
-                    <div style="text-align: left;">
-                        <div style="font-weight: 700; font-size: 14px; color: #122244;">System Admin (Admin Account)</div>
-                        <div style="font-size: 12px; color: #64748b;">rma.pndy@gmail.com</div>
-                    </div>
-                </div>
-
-                <div class="google-account-row" onclick="selectMockGoogleAccount('sarthakpandey315@gmail.com', 'Sarthak Pandey')" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #cbd5e1; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #f26f3c; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">SP</div>
-                    <div style="text-align: left;">
-                        <div style="font-weight: 700; font-size: 14px; color: #122244;">Sarthak Pandey (Student Account)</div>
-                        <div style="font-size: 12px; color: #64748b;">sarthakpandey315@gmail.com</div>
-                    </div>
-                </div>
-
-                <div class="google-account-row" onclick="selectCustomMockGoogleAccount()" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #cbd5e1; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #cbd5e1; color: #122244; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">+</div>
-                    <div style="text-align: left;">
-                        <div style="font-weight: 700; font-size: 14px; color: #122244;">Use another Gmail account</div>
-                        <div style="font-size: 12px; color: #64748b;">Simulate custom Google profile</div>
-                    </div>
-                </div>
-            </div>
-
-            <button type="button" id="close-chooser-btn" class="google-btn" style="width: 100%; border-radius: 8px; font-size: 13px; background:#f1f5f9 !important;">Cancel</button>
-        </div>
-    `;
-
-    document.body.appendChild(chooserModal);
-
-    const style = document.createElement("style");
-    style.id = "chooser-hover-styles";
-    style.innerHTML = `
-        .google-account-row:hover {
-            border-color: #122244 !important;
-            background: #f8fafc;
-            transform: translateY(-2px);
-            box-shadow: 3px 3px 0px #122244;
-        }
-    `;
-    document.head.appendChild(style);
-
-    chooserModal.querySelector("#close-chooser-btn").addEventListener("click", () => {
-        chooserModal.remove();
-        style.remove();
-    });
-}
-
-function parseJwt(token) {
-    try {
-        var base64Url = token.split('.')[1];
-        var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-    } catch(e) {
-        return null;
-    }
-}
-
 document.addEventListener("DOMContentLoaded", function () {
-    // Render Google / Mock Sign-In button on load
-    if (typeof google !== "undefined" && google.accounts) {
-        window.initGoogleLibrary();
-    } else {
-        window.renderMockButton();
-    }
 
     const authContainer = document.querySelector(".auth-buttons");
     const activeUser = JSON.parse(sessionStorage.getItem("library_user"));
@@ -254,35 +51,79 @@ document.addEventListener("DOMContentLoaded", function () {
     // -------------------------------------------------------------------------
     // 2. AUTHENTICATION GATEWAY PIPELINES (login.html actions)
     // -------------------------------------------------------------------------
-    const gmailLoginForm = document.getElementById("gmail-login-action-form");
+    const otpRequestForm = document.getElementById("otp-request-action-form");
+    const otpVerifyForm = document.getElementById("otp-verify-action-form");
 
-    if (gmailLoginForm) {
-        gmailLoginForm.addEventListener("submit", async (e) => {
+    if (otpRequestForm) {
+        otpRequestForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const email = document.getElementById("gmail-login-email").value;
-            const name = document.getElementById("gmail-login-name").value;
+            const emailInput = document.getElementById("otp-email");
+            const sendBtn = document.getElementById("send-otp-btn");
+            const email = emailInput.value.trim();
 
-            // Simple validation that it's a Gmail address
             if (!email.toLowerCase().endsWith("@gmail.com")) {
                 alert("🔒 Access Constraint: Please enter a valid Gmail address (@gmail.com).");
                 return;
             }
 
+            sendBtn.disabled = true;
+            sendBtn.textContent = "Sending Login Code... ⏳";
+
             try {
-                const res = await fetch(`${API_BASE_URL}/api/auth/gmail-login`, {
+                const res = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, name })
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert(`✉ Verification code sent successfully to ${email}! Please check your Gmail inbox.`);
+                    document.getElementById("auth-subheadline").textContent = `We have sent a 6-digit login verification code to: ${email}. Enter details to log in.`;
+                    otpRequestForm.style.display = "none";
+                    otpVerifyForm.style.display = "flex";
+                } else {
+                    alert(`❌ Failed to send code: ${data.error}`);
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = "Send Login Code ✉";
+                }
+            } catch (err) {
+                alert("Server connection failed. Please ensure the backend server is running.");
+                sendBtn.disabled = false;
+                sendBtn.textContent = "Send Login Code ✉";
+            }
+        });
+    }
+
+    if (otpVerifyForm) {
+        otpVerifyForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("otp-email").value.trim();
+            const name = document.getElementById("otp-name").value.trim();
+            const code = document.getElementById("otp-code").value.trim();
+            const verifyBtn = document.getElementById("verify-otp-btn");
+
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = "Verifying Code... ⏳";
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, name, otp: code })
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
                     sessionStorage.setItem("library_user", JSON.stringify({ name: data.name, email: data.email, role: data.role }));
                     window.location.href = data.role === "admin" ? "admin.html" : "spaces.html";
                 } else {
-                    alert(`❌ Access Denied: ${data.error}`);
+                    alert(`❌ Verification Failed: ${data.error}`);
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = "Verify & Access Workspace ➔";
                 }
             } catch (err) {
-                alert("Server validation processing failed.");
+                alert("Verification failed. Server connection issue.");
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = "Verify & Access Workspace ➔";
             }
         });
     }

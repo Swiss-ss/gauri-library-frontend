@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <!-- Google Identity Services client library -->
-    <script src="https://accounts.google.com/gsi/client" onload="initGoogleLibrary()" async defer></script>
     
     <style>
         /* Premium Aesthetics & Smooth Animations */
@@ -101,70 +99,42 @@
             font-size: 15px;
             color: #4b5563;
             line-height: 1.6;
-            margin-bottom: 35px;
-        }
-
-        /* Programmatic Button Container */
-        .btn-wrapper {
             margin-bottom: 30px;
-            display: flex;
-            justify-content: center;
-            min-height: 48px;
-        }
-
-        /* Developer Drawer System */
-        .developer-drawer {
-            border-top: 2px dashed #cbd5e1;
-            margin-top: 15px;
-            padding-top: 25px;
-        }
-
-        .drawer-toggle-btn {
-            background: none;
-            border: none;
-            color: #64748b;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.15s;
-        }
-
-        .drawer-toggle-btn:hover {
-            color: #f26f3c;
-        }
-
-        .drawer-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
-            text-align: left;
-        }
-
-        .drawer-content.active {
-            max-height: 1000px;
-            transition: max-height 0.4s ease-in-out;
-        }
-
-        .drawer-description {
-            font-size: 12px;
-            color: #64748b;
-            line-height: 1.5;
-            margin-bottom: 15px;
-            background: #f1f5f9;
-            padding: 10px;
-            border-radius: 8px;
-            border-left: 3px solid #64748b;
         }
 
         .navbar-brutal {
             background-color: rgba(235, 227, 216, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+        }
+
+        .auth-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 18px;
+            text-align: left;
+        }
+        .auth-input-group label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .auth-input-group input {
+            border: var(--border-thick);
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 12px;
+            background-color: var(--bg-canvas);
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .auth-input-group input:focus {
+            background-color: #ffffff;
+            box-shadow: 3px 3px 0px var(--text-dark);
         }
     </style>
 </head>
@@ -186,63 +156,38 @@
 
     <main class="auth-wrapper">
         <div class="premium-auth-card">
-            <span class="brand-badge">Secured Access Gateway</span>
+            <span class="brand-badge">Gmail Security System</span>
             <h1 class="headline">Enter Study Room</h1>
-            <p class="subheadline">Use your Google or Gmail account to instantly log in, reserve space, and manage daily library session passes.</p>
+            <p class="subheadline" id="auth-subheadline">Enter your Gmail address below. We will dispatch a 6-digit login verification code to your inbox.</p>
 
-            <!-- Google SSO Button Container -->
-            <div class="btn-wrapper" id="google-signin-btn-container">
-                <!-- Loader shown before library loads -->
-                <div style="font-weight: 700; color: #122244; font-size:14px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-spinner fa-spin" style="color: #f26f3c;"></i> Loading Identity Provider...
+            <!-- Step 1: Send OTP -->
+            <form id="otp-request-action-form" style="display: flex; flex-direction: column; gap: 5px; text-align: left;">
+                <div class="auth-input-group">
+                    <label>Gmail Address</label>
+                    <input type="email" id="otp-email" placeholder="yourname@gmail.com" required>
                 </div>
-            </div>
-
-            <!-- Expandable Developer Sandbox Toggle -->
-            <div class="developer-drawer">
-                <button type="button" class="drawer-toggle-btn" onclick="toggleDeveloperDrawer()">
-                    <i class="fa-solid fa-code"></i> Developer Sandbox Settings <i class="fa-solid fa-chevron-down" id="arrow-icon"></i>
+                <button type="submit" id="send-otp-btn" class="btn-black-pill" style="width: 100%; justify-content: center; margin-top: 5px; font-family: 'Outfit', sans-serif;">
+                    Send Login Code ✉
                 </button>
-                
-                <div class="drawer-content" id="dev-drawer-panel">
-                    <p class="drawer-description">
-                        <strong>Offline / Local Testing Mode:</strong> Use this form to simulate Google authentication on localhost without registering a project on Google Cloud.
-                    </p>
-                    
-                    <form id="gmail-login-action-form" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-                        <div class="auth-input-group">
-                            <label style="font-family: 'Outfit', sans-serif; font-size: 11px;">Simulated Gmail Address</label>
-                            <input type="email" id="gmail-login-email" placeholder="yourname@gmail.com" required style="font-family: 'Outfit', sans-serif;">
-                        </div>
-                        <div class="auth-input-group">
-                            <label style="font-family: 'Outfit', sans-serif; font-size: 11px;">Simulated Profile Name</label>
-                            <input type="text" id="gmail-login-name" placeholder="Full Name" required style="font-family: 'Outfit', sans-serif;">
-                        </div>
-                        <button type="submit" class="btn-black-pill" style="width: 100%; justify-content: center; margin-top: 8px; font-family: 'Outfit', sans-serif;">
-                            Simulate Google Sign-In →
-                        </button>
-                    </form>
+            </form>
+
+            <!-- Step 2: Verify OTP (Hidden Initially) -->
+            <form id="otp-verify-action-form" style="display: none; flex-direction: column; gap: 5px; text-align: left; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
+                <div class="auth-input-group">
+                    <label>Aspirant Full Name</label>
+                    <input type="text" id="otp-name" placeholder="Verify profile name" required>
                 </div>
-            </div>
+                <div class="auth-input-group">
+                    <label>6-Digit Verification Code</label>
+                    <input type="text" id="otp-code" placeholder="••••••" maxlength="6" required style="text-align: center; letter-spacing: 5px; font-size: 18px; font-weight: 800;">
+                </div>
+                <button type="submit" id="verify-otp-btn" class="btn-black-pill" style="width: 100%; justify-content: center; margin-top: 5px; font-family: 'Outfit', sans-serif; background-color: var(--bg-accent-orange) !important;">
+                    Verify & Access Workspace ➔
+                </button>
+            </form>
         </div>
     </main>
 
-    <script>
-        // Toggle the Developer sandbox options drawer
-        function toggleDeveloperDrawer() {
-            const panel = document.getElementById("dev-drawer-panel");
-            const arrow = document.getElementById("arrow-icon");
-            panel.classList.toggle("active");
-            
-            if (panel.classList.contains("active")) {
-                arrow.className = "fa-solid fa-chevron-up";
-                arrow.style.color = "#f26f3c";
-            } else {
-                arrow.className = "fa-solid fa-chevron-down";
-                arrow.style.color = "#64748b";
-            }
-        }
-    </script>
     <script src="js/main.js"></script>
 </body>
 </html>

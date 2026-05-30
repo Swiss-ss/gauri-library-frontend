@@ -145,29 +145,76 @@ app.get('/api/seats', async (req, res) => {
     }
 });
 
-// Gmail Unified Login & Auto-Signup
-app.post('/api/auth/gmail-login', async (req, res) => {
+// Memory Cache for OTP Authentication Codes
+const otps = new Map(); // email -> { otp, expires }
+
+// Send 6-Digit OTP via Nodemailer
+app.post('/api/auth/send-otp', async (req, res) => {
     try {
-        const { email, name } = req.body;
+        const { email } = req.body;
         if (!email) {
             return res.status(400).json({ success: false, error: "Gmail address is required." });
         }
         const cleanEmail = email.trim().toLowerCase();
 
+        if (!cleanEmail.endsWith("@gmail.com")) {
+            return res.status(400).json({ success: false, error: "Only Gmail (@gmail.com) addresses are permitted." });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = Date.now() + 5 * 60 * 1000; // 5 minutes validity
+        otps.set(cleanEmail, { otp, expires });
+
+        const mailOptions = {
+            from: process.env.GMAIL_USER,
+            to: cleanEmail,
+            subject: `[OTP VERIFICATION] Gauri Library Portal Access Code`,
+            text: `Hello Aspirant,\n\nYour 6-digit Gauri Library login verification code is:\n\n🔑 ${otp}\n\nThis verification code is valid for 5 minutes. Please do not share this OTP code with anyone.`
+        };
+
+        gmailTransporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error("❌ Send OTP Mail Error:", error);
+                return res.status(500).json({ success: false, error: "Failed to send code via Gmail: " + error.message });
+            }
+            res.status(200).json({ success: true, message: "Verification code sent to your email!" });
+        });
+    } catch (err) {
+        console.error("Send OTP error:", err);
+        res.status(500).json({ success: false, error: "Nodemailer dispatch processing exception." });
+    }
+});
+
+// Verify OTP & Complete Login / Register
+app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+        const { email, otp, name } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, error: "Email and verification code are required." });
+        }
+        const cleanEmail = email.trim().toLowerCase();
+
+        const record = otps.get(cleanEmail);
+        if (!record || record.otp !== otp || Date.now() > record.expires) {
+            return res.status(400).json({ success: false, error: "Invalid or expired login code." });
+        }
+
+        // Verification success - clear the code
+        otps.delete(cleanEmail);
+
         let user = await User.findOne({ email: cleanEmail });
         const assignRole = (process.env.ADMIN_EMAIL && cleanEmail === process.env.ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'student';
 
         if (!user) {
-            // Register a new user automatically
             user = new User({
                 name: name || cleanEmail.split('@')[0],
                 email: cleanEmail,
-                password: "gmail-authenticated",
+                password: "passwordless-otp",
                 role: assignRole
             });
             await user.save();
         } else {
-            // Update role if admin configuration changed
             if (user.role !== assignRole) {
                 user.role = assignRole;
                 await user.save();
@@ -176,8 +223,8 @@ app.post('/api/auth/gmail-login', async (req, res) => {
 
         res.status(200).json({ success: true, role: user.role, name: user.name, email: cleanEmail });
     } catch (err) {
-        console.error("Gmail login error:", err);
-        res.status(500).json({ success: false, error: "Gmail login system processing exception." });
+        console.error("Verify OTP error:", err);
+        res.status(500).json({ success: false, error: "OTP validation system processing exception." });
     }
 });
 
