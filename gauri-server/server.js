@@ -91,10 +91,9 @@ setInterval(async () => {
 const appPassword = process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '') : '';
 
 const gmailTransporter = nodemailer.createTransport({
-    service: 'gmail',
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // true for 465, false for other ports (automatically uses STARTTLS)
     auth: {
         user: process.env.GMAIL_USER,
         pass: appPassword
@@ -263,6 +262,11 @@ app.get('/api/admin/dashboard-ledger', async (req, res) => {
 // Reserve Seat & Email Ticket
 app.post('/api/allocate-seat', async (req, res) => {
     try {
+        if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+            console.error("❌ Email credentials missing in environment variables!");
+            return res.status(200).json({ success: true, mailSent: false, error: "Nodemailer credentials (GMAIL_USER or GMAIL_APP_PASSWORD) are not configured in your Render dashboard environment variables." });
+        }
+
         const { studentName, studentPhone, studentEmail, seatNumber, duration } = req.body;
         const targetSeatNum = parseInt(seatNumber);
 
@@ -304,6 +308,11 @@ app.post('/api/allocate-seat', async (req, res) => {
 // Submit General Inquiry Query
 app.post('/api/submit-query', async (req, res) => {
     try {
+        if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+            console.error("❌ Email credentials missing in environment variables!");
+            return res.status(500).json({ success: false, error: "Email credentials (GMAIL_USER or GMAIL_APP_PASSWORD) are not configured in your Render dashboard environment variables." });
+        }
+
         const { name, email, message } = req.body;
         if (!name || !email || !message) {
             return res.status(400).json({ success: false, error: "All fields are required." });
